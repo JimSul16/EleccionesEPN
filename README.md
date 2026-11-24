@@ -149,6 +149,7 @@ Son cédulas generadas con el algoritmo de verificación; no pertenecen a person
 | Unitarias (reglas de negocio y guards) | `npm run test:unit` | 41 pruebas |
 | Reglas de seguridad (aislamiento del veedor, validaciones, Storage) | `npm run test:rules` | 30 pruebas |
 | Integración de cuentas y acceso (Functions) | ver abajo | 13 casos |
+| E2E de humo en navegador móvil (Playwright, Pixel 7) | `npm run test:e2e` | 4 pruebas |
 | Lint | `npx ng lint --max-warnings 0` | sin errores |
 
 ```powershell
