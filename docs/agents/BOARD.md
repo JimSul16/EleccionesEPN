@@ -17,12 +17,15 @@ Estados: `todo`, `in-progress`, `review`, `done`, `blocked`.
 
 | ID | Tarea | Estado |
 |---|---|---|
-| A-01 | `npm install -D @firebase/rules-unit-testing` y agregar a package.json el script `"test:rules": "firebase emulators:exec --only firestore,storage \"vitest run --config vitest.rules.config.mts\""` | todo |
-| A-02 | Crear `functions/.env.elecciones-epn` con `WEB_API_KEY=<apiKey web del proyecto>` (pública; no commitear igual) | todo |
-| A-03 | Dar a la cuenta de servicio de Cloud Functions el rol **Service Account Token Creator** (lo necesita `createCustomToken` en producción; en el emulador no) | todo |
-| A-04 | `firebase deploy --only firestore:rules,storage,functions` después de A-01..A-03 y de que pasen los tests de reglas | todo |
-| A-05 | Revisar el bucket real: `environment.ts` usa `elecciones-epn.appspot.com` y `environment.prod.ts` usa `elecciones-epn.firebasestorage.app`; dejar el correcto en ambos | todo |
-| A-06 | Nota para esta PC: el emulador de Firestore falla con "Unable to establish loopback connection" porque la carpeta TEMP tiene un espacio. Se arregla con `JAVA_TOOL_OPTIONS=-Djdk.net.unixdomain.tmpdir=C:\Users\Public` (documentarlo en el README) | todo |
+| A-01 | `npm install -D @firebase/rules-unit-testing` y script `test:rules`. (23/24 pasan; falla 1 en Storage cross-service rules, ver reporte para Claude) | done |
+| A-02 | Crear `functions/.env.elecciones-epn` con `WEB_API_KEY` (pública; no versionada en git) | done |
+| A-03 | Rol "Service Account Token Creator" para cuenta de servicio de Functions (pendiente del usuario en consola GCP IAM; gcloud no instalado) | blocked |
+| A-04 | `firebase deploy --only firestore:rules,storage,functions` (bloqueado hasta resolver fallo de Storage rules y que el usuario active Blaze en consola) | blocked |
+| A-05 | Unificar bucket: ambos entornos usan `elecciones-epn.firebasestorage.app` | done |
+| A-06 | Documentación de emuladores y `JAVA_TOOL_OPTIONS` en `docs/setup/EMULADORES.md` | done |
+| S-06 | Generación del APK debug (`android/app/build/outputs/apk/debug/app-debug.apk`, 9.18 MB) | done |
+| T-007 | Assets visuales: icon.png, splash.png, recursos Android generados con `@capacitor/assets`, 4 SVGs de estados y MANIFEST.md | done |
+| T-008 | Motion: `sincronizando.lottie`, `acta-guardada.lottie`, `motion.scss` con reduced-motion | done |
 
 ## Pedidos para ti (consola de Firebase)
 
