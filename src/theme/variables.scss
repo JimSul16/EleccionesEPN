@@ -1,2 +1,153 @@
-// For information on how to create your own theme, please refer to:
-// https://ionicframework.com/docs/theming/
+// T-004 — Variables de theming de Ionic (PLAN-AGENTES.md 3.2 · ADR-011 a ADR-013).
+//
+// Orden de cascada (importante):
+//   1. tokens.scss: IBM Plex vía @fontsource y tokens de diseño.
+//   2. Páginas de acceso (T-009): los .page.ts no declaran styleUrl (son de
+//      Claude), así que sus .page.scss se cargan aquí en modo global, con
+//      selectores .auth-* que siguen funcionando si más tarde se añade styleUrl.
+//   3. Variables claras de Ionic.
+//   4. Modo oscuro al final: gana en cascada a dark.system.css (mismo
+//      peso de especificidad, pero va después en el bundle).
+@use "./tokens.scss";
+@use "../app/features/auth/login/login.page.scss";
+@use "../app/features/auth/cambiar-password/cambiar-password.page.scss";
+@use "../app/features/auth/recuperar/recuperar.page.scss";
+
+:root {
+  // --- Tipografía (ADR-012) ---
+  --ion-font-family: var(--app-font-sans);
+
+  // --- Superficie y texto (DESIGN.md) ---
+  --ion-background-color: var(--app-canvas);
+  --ion-background-color-rgb: 255, 255, 255;
+  --ion-text-color: var(--app-ink);
+  --ion-text-color-rgb: 22, 22, 22;
+  --ion-border-color: var(--app-hairline);
+  --ion-toolbar-background: var(--app-canvas);
+  --ion-toolbar-border-color: var(--app-hairline);
+  --ion-item-background: var(--app-canvas);
+  --ion-card-background: var(--app-canvas);
+
+  // --- Primario (PLAN 3.2) ---
+  // blue-50 base; blue-60 (hover) va a --ion-color-primary-tint y blue-80
+  // (presionado) a --ion-color-primary-shade, como indica la tabla 3.2.
+  // En Ionic "tint" se usa en hover y "shade" al presionar; blue-60 es más
+  // oscuro que blue-50, pero es el token de hover de Carbon.
+  --ion-color-primary: #0f62fe;
+  --ion-color-primary-rgb: 15, 98, 254;
+  --ion-color-primary-contrast: #ffffff;
+  --ion-color-primary-contrast-rgb: 255, 255, 255;
+  --ion-color-primary-tint: #0043ce;
+  --ion-color-primary-shade: #002d9c;
+
+  // --- Secundario: "button-secondary" de Carbon en tinta ---
+  // DESIGN.md no define tonos derivados: shade/tint apuntan a tokens reales.
+  --ion-color-secondary: #161616;
+  --ion-color-secondary-rgb: 22, 22, 22;
+  --ion-color-secondary-contrast: #ffffff;
+  --ion-color-secondary-contrast-rgb: 255, 255, 255;
+  --ion-color-secondary-shade: #161616;
+  --ion-color-secondary-tint: #262626;
+
+  // --- Terciario: sin segundo color de marca (DESIGN.md): reutiliza blue-60 ---
+  --ion-color-tertiary: #0043ce;
+  --ion-color-tertiary-rgb: 0, 67, 206;
+  --ion-color-tertiary-contrast: #ffffff;
+  --ion-color-tertiary-contrast-rgb: 255, 255, 255;
+  --ion-color-tertiary-shade: #002d9c;
+  --ion-color-tertiary-tint: #0f62fe;
+
+  // --- Semánticos (PLAN 3.2) ---
+  --ion-color-success: #24a148;
+  --ion-color-success-rgb: 36, 161, 72;
+  // Texto oscuro sobre verde: 5,4:1 (blanco daría 3,4:1).
+  --ion-color-success-contrast: #161616;
+  --ion-color-success-contrast-rgb: 22, 22, 22;
+  --ion-color-success-shade: #24a148;
+  --ion-color-success-tint: #24a148;
+
+  // Warning con texto oscuro, como exige la tabla 3.2.
+  --ion-color-warning: #f1c21b;
+  --ion-color-warning-rgb: 241, 194, 27;
+  --ion-color-warning-contrast: #161616;
+  --ion-color-warning-contrast-rgb: 22, 22, 22;
+  --ion-color-warning-shade: #f1c21b;
+  --ion-color-warning-tint: #f1c21b;
+
+  --ion-color-danger: #da1e28;
+  --ion-color-danger-rgb: 221, 30, 40;
+  --ion-color-danger-contrast: #ffffff;
+  --ion-color-danger-contrast-rgb: 255, 255, 255;
+  --ion-color-danger-shade: #da1e28;
+  --ion-color-danger-tint: #da1e28;
+
+  // --- Grises del sistema para componentes de Ionic ---
+  // light/dark/medium quedan anclados a tokens de DESIGN.md para que nada
+  // salga de la paleta si un componente los usa por defecto.
+  --ion-color-light: #f4f4f4;
+  --ion-color-light-rgb: 244, 244, 244;
+  --ion-color-light-contrast: #161616;
+  --ion-color-light-contrast-rgb: 22, 22, 22;
+  --ion-color-light-shade: #e0e0e0;
+  --ion-color-light-tint: #ffffff;
+
+  --ion-color-dark: #161616;
+  --ion-color-dark-rgb: 22, 22, 22;
+  --ion-color-dark-contrast: #ffffff;
+  --ion-color-dark-contrast-rgb: 255, 255, 255;
+  --ion-color-dark-shade: #161616;
+  --ion-color-dark-tint: #262626;
+
+  --ion-color-medium: var(--app-ink-muted);
+  --ion-color-medium-rgb: 82, 82, 82;
+  --ion-color-medium-contrast: #ffffff;
+  --ion-color-medium-contrast-rgb: 255, 255, 255;
+  --ion-color-medium-shade: var(--app-ink-muted);
+  --ion-color-medium-tint: var(--app-ink-subtle);
+}
+
+// --- Modo oscuro: tokens inversos (DESIGN.md inverse-*) ---
+// El selector repite :root.md/:root.ios porque dark.system.css declara
+// --ion-background-color y --ion-text-color en :root.md/:root.ios (peso
+// mayor que :root simple); aquí se iguala el peso y se va después en cascada.
+// Ojo: gray-80 #393939 es el hairline sobre inverse-canvas; DESIGN.md no
+// extrae la paleta oscura completa (ver "Known Gaps" del DESIGN.md).
+@media (prefers-color-scheme: dark) {
+  :root,
+  :root.md,
+  :root.ios {
+    --app-canvas: #161616;
+    --app-surface-1: #262626;
+    --app-surface-2: #393939;
+    --app-hairline: #393939;
+    --app-hairline-strong: #ffffff;
+    --app-ink: #ffffff;
+    --app-ink-muted: #c6c6c6;
+    --app-ink-subtle: #8c8c8c;
+    // Enlace sobre canvas oscuro: blue-40 de Carbon (token de tema oscuro),
+    // 7.7:1 sobre #161616; blue-50 daría solo 3.6:1 (hallazgo de impeccable).
+    --app-link: #78a9ff;
+
+    --ion-background-color: #161616;
+    --ion-background-color-rgb: 22, 22, 22;
+    --ion-text-color: #ffffff;
+    --ion-text-color-rgb: 255, 255, 255;
+    --ion-border-color: #393939;
+    --ion-toolbar-background: #161616;
+    --ion-toolbar-border-color: #393939;
+    --ion-item-background: #161616;
+    --ion-card-background: #262626;
+
+    // El secundario se invierte para seguir visible sobre canvas oscuro.
+    --ion-color-secondary: #f4f4f4;
+    --ion-color-secondary-rgb: 244, 244, 244;
+    --ion-color-secondary-contrast: #161616;
+    --ion-color-secondary-contrast-rgb: 22, 22, 22;
+    --ion-color-secondary-shade: #e0e0e0;
+    --ion-color-secondary-tint: #ffffff;
+
+    --ion-color-medium-rgb: 198, 198, 198;
+    --ion-color-medium-contrast: #161616;
+    --ion-color-medium-contrast-rgb: 22, 22, 22;
+  }
+}

@@ -1,50 +1,58 @@
-<ion-header>
+<ion-header class="auth-header">
   <ion-toolbar>
-    <ion-title>Control electoral</ion-title>
+    <ion-title>EleccionesEPN</ion-title>
   </ion-toolbar>
 </ion-header>
 
-<ion-content class="ion-padding">
-  <form [formGroup]="form" (ngSubmit)="ingresar()" novalidate>
-    <ion-input
-      formControlName="cedula"
-      label="Cédula"
-      labelPlacement="stacked"
-      fill="outline"
-      inputmode="numeric"
-      maxlength="10"
-      autocomplete="username"
-      [errorText]="errorCedula() ?? ''"
-      [class.ion-invalid]="!!errorCedula()"
-      [class.ion-touched]="form.controls.cedula.touched"
-    />
+<ion-content class="auth-content">
+  <div class="auth-shell">
+    <div class="auth-hero">
+      <h1 class="auth-title">Control electoral</h1>
+    </div>
 
-    <ion-input
-      formControlName="password"
-      type="password"
-      label="Contraseña"
-      labelPlacement="stacked"
-      fill="outline"
-      autocomplete="current-password"
-      errorText="Ingrese la contraseña."
-      [class.ion-invalid]="form.controls.password.touched && form.controls.password.invalid"
-      [class.ion-touched]="form.controls.password.touched"
-    />
+    <form class="auth-form" [formGroup]="form" (ngSubmit)="ingresar()" novalidate>
+      <ion-input
+        formControlName="cedula"
+        label="Cédula"
+        labelPlacement="stacked"
+        fill="outline"
+        inputmode="numeric"
+        maxlength="10"
+        autocomplete="username"
+        [errorText]="errorCedula() ?? ''"
+        [class.ion-invalid]="!!errorCedula()"
+        [class.ion-touched]="form.controls.cedula.touched"
+      />
 
-    @if (error()) {
-    <ion-text color="danger" role="alert">
-      <p>{{ error() }}</p>
-    </ion-text>
-    }
+      <ion-input
+        formControlName="password"
+        type="password"
+        label="Contraseña"
+        labelPlacement="stacked"
+        fill="outline"
+        autocomplete="current-password"
+        errorText="Ingrese la contraseña."
+        [class.ion-invalid]="form.controls.password.touched && form.controls.password.invalid"
+        [class.ion-touched]="form.controls.password.touched"
+      />
 
-    <ion-button type="submit" expand="block" [disabled]="cargando()">
-      @if (cargando()) {
-      <ion-spinner name="crescent" aria-label="Ingresando" />
-      } @else { Ingresar }
-    </ion-button>
+      @if (error()) {
+      <ion-text class="auth-alert auth-alert--danger" color="danger" role="alert">
+        <p>{{ error() }}</p>
+      </ion-text>
+      }
 
-    <ion-button fill="clear" expand="block" routerLink="/recuperar">¿Olvidó su contraseña?</ion-button>
+      <ion-button class="auth-submit" type="submit" expand="block" [disabled]="cargando()">
+        @if (cargando()) {
+        <ion-spinner name="crescent" aria-label="Ingresando" />
+        } @else { Ingresar }
+      </ion-button>
 
-    <ion-note>La primera vez use la contraseña inicial que le entregó su coordinador.</ion-note>
-  </form>
+      <ion-button class="auth-link" fill="clear" expand="block" routerLink="/recuperar"
+        >¿Olvidó su contraseña?</ion-button
+      >
+
+      <ion-note class="auth-note">La primera vez use la contraseña inicial que le entregó su coordinador.</ion-note>
+    </form>
+  </div>
 </ion-content>
