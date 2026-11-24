@@ -2,12 +2,12 @@ export const environment = {
   production: true,
   useEmulators: false,
   firebase: {
-    apiKey: 'YOUR_PROD_API_KEY',
+    apiKey: 'AIzaSyDx7I1PT8T0UWYiLNEJcTBfyTJngsvCUwE',
     authDomain: 'elecciones-epn.firebaseapp.com',
     projectId: 'elecciones-epn',
     storageBucket: 'elecciones-epn.firebasestorage.app',
-    messagingSenderId: 'YOUR_PROD_MESSAGING_SENDER_ID',
-    appId: 'YOUR_PROD_APP_ID'
+    messagingSenderId: '701602603129',
+    appId: '1:701602603129:web:b9265752eb3e08bcb3b4a8'
   },
   emulatorPorts: {
     auth: 9099,
