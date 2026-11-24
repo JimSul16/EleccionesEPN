@@ -1,42 +1,54 @@
 # BOARD
 
 Estados: `todo`, `in-progress`, `review`, `done`, `blocked`.
+Actualizado: lunes 23-nov, tras unir las ramas de Claude, OpenCode y Antigravity en `main`.
 
-## Hecho (lunes 23)
-
-| ID | Tarea | Dueño | Estado |
-|---|---|---|---|
-| S-01..S-04 | Scaffold, librerías, firebase init, primer APK | antigravity | done |
-| C-01 | `domain/`: modelos, cédula, reglas de acta, nitidez, contraseña, validadores de formulario + 31 tests | claude | done |
-| C-02 | `firestore.rules` y `storage.rules` por rol y pertenencia (reemplazan las abiertas del init) | claude | done |
-| C-03 | `tests/rules/reglas.spec.ts` (aislamiento del veedor, validaciones, Storage) | claude | blocked por A-01 |
-| C-04 | Functions: `crearUsuario`, `loginCedula`, `recuperarPassword`, `cambiarPassword`, `auditarActa` | claude | done (sin probar en emulador) |
-| C-05 | `core/`: FirebaseService, AuthService (signals), guards, errores; pantallas de login, cambio y recuperación; rutas por rol | claude | done |
-
-## Pedidos para Antigravity
+## Claude (programación)
 
 | ID | Tarea | Estado |
 |---|---|---|
-| A-01 | `npm install -D @firebase/rules-unit-testing` y agregar a package.json el script `"test:rules": "firebase emulators:exec --project demo-elecciones-epn --only firestore,storage \"vitest run --config vitest.rules.config.mts\""` | done |
-| A-02 | Crear `functions/.env.elecciones-epn` con `WEB_API_KEY=<apiKey web del proyecto>` (pública; no commitear igual) | done |
-| A-03 | Dar a la cuenta de servicio de Cloud Functions el rol **Service Account Token Creator** (lo necesita `createCustomToken` en producción; en el emulador no) | pendiente en consola |
-| A-04 | `firebase deploy --only firestore:rules,storage,functions` después de A-01..A-03 y de que pasen los tests de reglas | todo |
-| A-05 | Revisar el bucket real: unificado a `elecciones-epn.firebasestorage.app` en `environment.ts`, `environment.prod.ts` y `environment.example.ts` | done |
-| A-06 | Nota para esta PC: emuladores funcionando y 24/24 tests de reglas pasando | done |
+| C-01 | `domain/`: modelos, cédula, reglas de acta, nitidez, contraseña, geo, validadores de formulario | done |
+| C-02 | `firestore.rules` y `storage.rules` por rol y pertenencia | done |
+| C-03 | `tests/rules/reglas.spec.ts`: 30 tests (aislamiento del veedor, validaciones, Storage, recintos) | done, 30/30 con `npm run test:rules` |
+| C-04 | Functions: `crearUsuario`, `loginCedula`, `recuperarPassword`, `cambiarPassword`, `auditarActa` | done, 13 pruebas de integración (`tests/integracion/cuentas.mjs`) |
+| C-05 | `core/`: FirebaseService, AuthService, guards (con test), errores; login, cambio y recuperación de contraseña | done |
+| C-06 | Seed R1 (`seed/seed.mjs`, con `--demo` y `--actas-demo`) | done |
+| C-07 | `data/` + veedor: mis mesas, acta con validación en vivo, cámara, nitidez, GPS, corrección | done (falta probar cámara y GPS en teléfono) |
+| C-08 | Coordinador de recinto: mesas, crear veedor, asignar/reasignar, corregir actas | done |
+| C-09 | Provincial: recintos, crear coordinador, avance, dashboard, ubicaciones GPS | done |
+| C-10 | Offline: caché de Firestore, cola de fotos en IndexedDB, indicador, conflictos por versión | done |
+| C-11 | ADR-001..017, README, `docs/IA.md` | todo |
 
-## Pedidos para ti (consola de Firebase)
+## OpenCode (UI)
 
 | ID | Tarea | Estado |
 |---|---|---|
+| T-004 | Tokens Carbon y variables de Ionic en `src/theme/` | done |
+| T-009 | Estilo de login, cambio y recuperación de contraseña | done |
+| T-010 | Estilo de las pantallas nuevas: `features/veedor`, `features/actas`, `features/recinto`, `features/provincial`, `features/usuarios`, `features/shared/estado-red` | todo |
+| T-011 | En formularios, el texto de error (`errorText`) queda tapado por el campo siguiente: dar espacio inferior a `ion-input` | todo |
+| T-006 | Componentes compartidos (state-view, chips de estado) | todo, baja prioridad |
+
+## Antigravity (setup, deploy, APK, assets)
+
+| ID | Tarea | Estado |
+|---|---|---|
+| A-01 | `@firebase/rules-unit-testing` y script `test:rules` | done. El fallo 23/24 de Storage era por correr sin `--project demo-elecciones-epn`; corregido en `main`, ahora 30/30 |
+| A-02 | `functions/.env.elecciones-epn` con `WEB_API_KEY` (no versionado) | done |
+| A-03 | Rol "Service Account Token Creator" a la cuenta de servicio de Functions | blocked: lo hace el usuario en la consola de Google Cloud (IAM) |
+| A-04 | `firebase deploy --only firestore:rules,firestore:indexes,storage,functions` | todo: ya no está bloqueado por las reglas; falta Blaze y A-03 |
+| A-05 | Bucket unificado a `elecciones-epn.firebasestorage.app` | done |
+| A-06 | `docs/setup/EMULADORES.md` | done |
+| A-07 | Quitar la dependencia errónea `"elecciones-epn": "file:.."` de `functions/package.json` | done en `main` (Claude). Antigravity: correr `npm --prefix functions install` para regenerar el lock |
+| S-06 | APK debug | done, pero se compiló antes de unir las ramas: **hay que regenerarlo desde `main`** |
+| T-007 | Ícono, splash, recursos Android, 4 SVG de estados, MANIFEST.md | done |
+| T-008 | dotLottie de sincronización y guardado, `motion.scss` con reduced-motion | done |
+
+## Usuario (consola)
+
+| ID | Tarea | Estado |
+|---|---|---|
+| U-00 | Activar el plan Blaze, bucket en us-central1, alerta de presupuesto de 1 USD | por confirmar |
 | U-01 | Authentication: activar el proveedor Correo/contraseña | todo |
-| U-02 | Authentication > Templates: poner en español los correos de verificación y de restablecimiento | todo |
-
-## Siguiente (Claude)
-
-| ID | Tarea | Estado |
-|---|---|---|
-| C-06 | Seed R1 (recintos, 5 organizaciones, 5+5 candidatos, coordinador provincial) con Admin SDK | todo |
-| C-07 | Repositorios `data/` + flujo del veedor: mis mesas, acta, cámara, nitidez, GPS, corrección | todo |
-| C-08 | Coordinador de recinto: mesas, crear veedor, asignar/reasignar, corregir actas | todo |
-| C-09 | Provincial: recintos, crear coordinador, avance, GPS, dashboard | todo |
-| C-10 | Offline: cola de fotos + indicador de pendientes | todo |
+| U-02 | Authentication > Templates: correos de verificación y restablecimiento en español | todo |
+| U-03 | A-03 (rol Token Creator en IAM) | todo |
