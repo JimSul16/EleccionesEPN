@@ -137,6 +137,11 @@ role, aria-*, errorText y las clases que ya existen (estado, vacio, tabular, cua
 faltantes, grafico, tabla-resultados, acciones, mesa). Puedes envolver en contenedores y agregar
 clases, pero no quitar ni renombrar las existentes.
 
+Dónde poner los estilos: cada pantalla nueva ya tiene su propio .page.scss enlazado con styleUrl
+(commit f7bce52), con estilos encapsulados. Escribe ahí los estilos de cada pantalla; NO los
+importes desde src/theme/variables.scss (eso solo se hizo con las pantallas de acceso de ayer).
+Lo compartido entre pantallas va en src/theme/.
+
 Tareas, en este orden (lo primero vale más puntos):
 T-010a Veedor: features/veedor/mis-mesas.page y features/actas/acta.page. El formulario del acta es
        la pantalla más importante: números en Plex Mono (.tabular), el cuadre ("Los totales cuadran" /
@@ -152,7 +157,8 @@ T-011  Global: en formularios el texto de error de ion-input queda tapado por el
 T-012  Estados vacío/error/sin conexión: puedes usar los SVG de Antigravity en src/assets/svg/
        (estado-vacio.svg, estado-error.svg, sin-conexion.svg) con <img src="assets/svg/..." alt="">
        dentro de los bloques .estado existentes, y estiliza features/shared/estado-red.component
-       (su plantilla está inline en el .ts: NO la edites; estiliza con clases globales en src/theme).
+       (su plantilla está inline en el .ts: NO la edites; estiliza con clases globales en src/theme:
+       .estado-red, .sin-red, .sincronizando y .estado-red__icono, que ya muestra sin-conexion.svg).
 Reglas de diseño: cero colores hex fuera de src/theme/, áreas táctiles de 44 px o más, texto base
 16 px, contraste AA, modo oscuro.
 

@@ -10,6 +10,14 @@ import { RedService } from '../../data/red.service';
   template: `
     @if (!red.conectado()) {
       <div class="estado-red sin-red" role="status">
+        <img
+          class="estado-red__icono"
+          src="assets/svg/sin-conexion.svg"
+          alt=""
+          aria-hidden="true"
+          width="24"
+          height="24"
+        />
         <ion-text color="warning">Sin conexión. Lo que registre se guardará y se enviará al reconectar.</ion-text>
       </div>
     } @else if (cola.pendientes() > 0) {
