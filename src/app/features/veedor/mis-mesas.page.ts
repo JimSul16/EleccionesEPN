@@ -25,6 +25,7 @@ import { MisMesasStore } from './mis-mesas.store';
 @Component({
   selector: 'app-mis-mesas',
   templateUrl: 'mis-mesas.page.html',
+  styleUrl: 'mis-mesas.page.scss',
   providers: [MisMesasStore],
   imports: [
     RouterLink,

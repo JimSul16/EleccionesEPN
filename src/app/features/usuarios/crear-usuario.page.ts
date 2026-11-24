@@ -28,6 +28,7 @@ import { PASSWORD_INICIAL } from '../../domain/usuario.rules';
 @Component({
   selector: 'app-crear-usuario',
   templateUrl: 'crear-usuario.page.html',
+  styleUrl: 'crear-usuario.page.scss',
   imports: [
     ReactiveFormsModule,
     IonHeader,

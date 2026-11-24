@@ -33,6 +33,7 @@ import { RegistroActaStore } from './registro-acta.store';
 @Component({
   selector: 'app-acta',
   templateUrl: 'acta.page.html',
+  styleUrl: 'acta.page.scss',
   providers: [RegistroActaStore],
   imports: [
     ReactiveFormsModule,

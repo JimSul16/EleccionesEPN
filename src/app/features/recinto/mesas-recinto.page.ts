@@ -32,6 +32,7 @@ const SIN_VEEDOR = '__ninguno__';
 @Component({
   selector: 'app-mesas-recinto',
   templateUrl: 'mesas-recinto.page.html',
+  styleUrl: 'mesas-recinto.page.scss',
   providers: [MesasRecintoStore],
   imports: [
     RouterLink,

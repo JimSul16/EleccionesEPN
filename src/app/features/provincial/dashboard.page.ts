@@ -45,6 +45,7 @@ type Estado =
 @Component({
   selector: 'app-dashboard',
   templateUrl: 'dashboard.page.html',
+  styleUrl: 'dashboard.page.scss',
   // Altura fija del contenedor: Chart.js con maintainAspectRatio=false la necesita
   // para dimensionar el canvas (el estilo visual va en el .scss de OpenCode).
   styles: ['.grafico { position: relative; height: 18rem; }'],

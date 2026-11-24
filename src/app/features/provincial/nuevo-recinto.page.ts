@@ -22,6 +22,7 @@ import { MENSAJES_UBICACION, UbicacionError, UbicacionService } from '../../data
 @Component({
   selector: 'app-nuevo-recinto',
   templateUrl: 'nuevo-recinto.page.html',
+  styleUrl: 'nuevo-recinto.page.scss',
   imports: [
     ReactiveFormsModule,
     IonHeader,

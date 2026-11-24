@@ -27,6 +27,7 @@ import { ProvincialStore } from './provincial.store';
 @Component({
   selector: 'app-recintos',
   templateUrl: 'recintos.page.html',
+  styleUrl: 'recintos.page.scss',
   providers: [ProvincialStore],
   imports: [
     RouterLink,

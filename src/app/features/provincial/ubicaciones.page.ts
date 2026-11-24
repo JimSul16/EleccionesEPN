@@ -23,6 +23,7 @@ import { ProvincialStore } from './provincial.store';
 @Component({
   selector: 'app-ubicaciones',
   templateUrl: 'ubicaciones.page.html',
+  styleUrl: 'ubicaciones.page.scss',
   providers: [ProvincialStore],
   imports: [
     IonHeader,

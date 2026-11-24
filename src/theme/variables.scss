@@ -9,6 +9,8 @@
 //   4. Modo oscuro al final: gana en cascada a dark.system.css (mismo
 //      peso de especificidad, pero va después en el bundle).
 @use "./tokens.scss";
+// Tokens de movimiento y regla de prefers-reduced-motion (Antigravity, ADR-014).
+@use "./motion.scss";
 @use "../app/features/auth/login/login.page.scss";
 @use "../app/features/auth/cambiar-password/cambiar-password.page.scss";
 @use "../app/features/auth/recuperar/recuperar.page.scss";
