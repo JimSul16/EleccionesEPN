@@ -125,7 +125,7 @@ ion-input.ion-touched.ion-invalid {
   align-items: center;
   gap: var(--app-space-2);
   padding: var(--app-space-3);
-  border: var(--app-hairline) solid var(--app-ink-subtle);
+  border: 1px solid var(--app-hairline);
   border-radius: var(--app-radius-none);
   font-size: var(--app-text-sm);
 }
