@@ -1,9 +1,7 @@
 // T-010a — Veedor: Mis mesas
 // Tarjetas con estado de cada acta legible de un vistazo
-@use "./mis-mesas.page.html";
-
 .mis-mesas .ion-card {
-  border: var(--app-hairline) solid var(--app-ink-subtle);
+  border: 1px solid var(--app-hairline);
   margin-bottom: var(--app-space-3);
 }
 
@@ -24,11 +22,6 @@
 }
 
 /* Estados de acta en el badge */
-.mis-mesas .badge-success {
-  --ion-color-success: var(--ion-color-success);
-}
-
-/* Estado visible en el badge de cada mesa */
 .mis-mesas ion-badge {
   font-size: var(--app-text-xs);
   font-weight: 600;

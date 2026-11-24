@@ -1,7 +1,5 @@
 // T-010c — Provincial: ubicaciones
 // La insignia "Lejos del recinto" debe destacar
-@use "./ubicaciones.page.html";
-
 .ubicaciones ion-badge[color="warning"] {
   background: var(--ion-color-warning);
   color: var(--ion-color-warning-contrast);
@@ -28,7 +26,7 @@
   color: var(--app-ink);
 }
 
-/ion-note[slot="end"] {
+ion-note[slot="end"] {
   color: var(--app-ink-muted);
   font-size: var(--app-text-xs);
 }

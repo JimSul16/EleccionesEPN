@@ -13,8 +13,8 @@
 <ion-content class="ion-padding">
   @switch (store.carga()) { @case ('cargando') {
   <div class="estado" role="status">
-    <img src="assets/svg/estado-vacio.svg" alt="Cargando acta" />
-    <ion-spinner name="crescent" /> <p>Cargando acta…</p>
+    <ion-spinner name="crescent" />
+    <p>Cargando acta…</p>
   </div>
   } @case ('error') {
   <div class="estado" role="alert">
@@ -26,7 +26,7 @@
   } @case ('listo') {
   <p class="mesa">Mesa {{ store.jrv()?.numero }} · versión {{ (store.anterior()?.version ?? 0) + 1 }}</p>
 
-  <form [formGroup]="form" (ngSubmit)="guardar()" novalidate>
+  <form [formGroup]="form" (ngSubmit)="guardar()" novalidate class="acta-form">
     <ion-list>
       <ion-list-header>
         <ion-label>Votos por organización</ion-label>
@@ -160,19 +160,19 @@
       }
     </ul>
     } @switch (store.guardado()) { @case ('guardado') {
-    <ion-text color="success" role="status"
+    <ion-text color="success" role="status" class="guardado-exitoso"
       ><p><strong>Acta guardada y sincronizada.</strong></p></ion-text
     >
     <ion-button type="button" expand="block" (click)="volver()">Volver</ion-button>
     } @case ('pendiente') {
-    <ion-text color="warning" role="status">
+    <ion-text color="warning" role="status" class="guardando-pendiente">
       <p><strong>Guardada en el teléfono.</strong> Se enviará automáticamente al recuperar la conexión.</p>
     </ion-text>
     <ion-button type="button" expand="block" (click)="volver()">Volver</ion-button>
     } @default { @if (store.errorGuardado()) {
-    <ion-text color="danger" role="alert"><p>{{ store.errorGuardado() }}</p></ion-text>
+    <ion-text color="danger" role="alert" class="error-guardado"><p>{{ store.errorGuardado() }}</p></ion-text>
     }
-    <ion-button type="submit" expand="block" [disabled]="!puedeGuardar()">
+    <ion-button type="submit" expand="block" class="guardar-grande" [disabled]="!puedeGuardar()">
       @if (store.guardado() === 'guardando') {
       <ion-spinner name="crescent" aria-label="Guardando" />
       } @else { {{ store.esCorreccion() ? 'Guardar corrección' : 'Guardar acta' }} }

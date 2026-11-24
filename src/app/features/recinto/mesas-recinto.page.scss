@@ -1,11 +1,7 @@
 // T-010b — Recinto: mesas y crear usuario
 // Chips de estado de mesa con color Y texto, nunca solo color
 // Barra de avance clara
-@use "./mesas-recinto.page.html";
-@use "./crear-usuario.page.html";
-
-/* ---- Chips de estado de mesa ---- */
-.etiqueta-estado {
+.mesas-recinto .etiqueta-estado {
   display: inline-flex;
   align-items: center;
   padding: var(--app-space-1) var(--app-space-2);
@@ -17,25 +13,25 @@
 }
 
 /* Sin veedor - fondo amarillo con texto oscuro */
-.etiqueta-sin-veedor {
+.mesas-recinto .etiqueta-sin-veedor {
   background: var(--ion-color-warning);
   color: var(--ion-color-warning-contrast);
 }
 
 /* Pendiente - fondo naranja/amber con texto oscuro */
-.etiqueta-pendiente {
-  background: #f8961a;  /* amber-400 aproximación */
+.mesas-recinto .etiqueta-pendiente {
+  background: var(--ion-color-warning);
   color: var(--ion-color-warning-contrast);
 }
 
 /* 1/2 actas - amarillo más claro */
-.etiqueta-parcial {
-  background: #fcd34d;  /* amber-300 */
-  color: var(--ion-ink-color);
+.mesas-recinto .etiqueta-parcial {
+  background: var(--ion-color-warning);
+  color: var(--ion-color-warning-contrast);
 }
 
 /* Completa - fondo verde con texto oscuro */
-.etiqueta-completa {
+.mesas-recinto .etiqueta-completa {
   background: var(--ion-color-success);
   color: var(--ion-color-success-contrast);
 }

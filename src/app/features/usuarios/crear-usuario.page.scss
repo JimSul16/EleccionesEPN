@@ -1,7 +1,5 @@
 // T-010b — Usuario: crear usuario
 // Chips de estado y áreas táctiles mejoradas
-@use "./crear-usuario.page.html";
-
 .crear-usuario {
   --ion-item-padding: var(--app-space-3) var(--app-space-4);
 }
@@ -12,7 +10,7 @@
 }
 
 /* Estados de formulario */
-.crear-usuario .ion-input.error .ion-text {
+.crear-usuario ion-input.error .ion-text {
   margin-top: var(--app-space-2);
 }
 

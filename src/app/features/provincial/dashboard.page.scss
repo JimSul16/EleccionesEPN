@@ -1,12 +1,9 @@
 // T-010c — Provincial: dashboard
 // Mantener .grafico con altura fija; estilizar .tabla-resultados
-// Gráfico con color neutro, sin colores de partidos
-@use "./dashboard.page.html";
-
+// números a la derecha, en .tabular; gráfico usa un solo color neutro
 .dashboard .grafico {
-  --canvas-height: 200px;
-  height: var(--canvas-height) !important;
-  /* Gráfico con solo un color neutro */
+  height: 18rem;
+  /* Gráfico con solo un color neutro - sin colores de partidos */
   .chart-neutral {
     fill: var(--app-ink-muted);
     stroke: var(--app-ink-subtle);
@@ -38,7 +35,7 @@
   text-align: right;
 }
 
-//* Cabeceras de tabla */
+/* Cabeceras de tabla */
 .tabla-resultados th {
   color: var(--app-ink-muted);
   font-size: var(--app-text-xs);

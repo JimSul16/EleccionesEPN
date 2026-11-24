@@ -1,8 +1,6 @@
 // T-010c — Provincial: recintos
-@use "./recintos.page.html";
-
 .recintos .ion-card {
-  border: var(--app-hairline) solid var(--app-ink-subtle);
+  border: 1px solid var(--app-hairline);
   margin-bottom: var(--app-space-3);
 }
 
