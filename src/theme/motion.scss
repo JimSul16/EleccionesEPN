@@ -1,0 +1,26 @@
+// Motion tokens segun DESIGN.md (IBM Carbon Design System)
+// ADR-014: motion-y-assets
+
+:root {
+  // Duraciones
+  --app-motion-duration-fast: 150ms;
+  --app-motion-duration-moderate: 240ms;
+  --app-motion-duration-slow: 400ms;
+
+  // Curvas de aceleracion (IBM Carbon easing)
+  --app-motion-easing-standard: cubic-bezier(0.2, 0, 0.38, 0.9);
+  --app-motion-easing-entrance: cubic-bezier(0, 0, 0.38, 0.9);
+  --app-motion-easing-exit: cubic-bezier(0.2, 0, 1, 0.9);
+}
+
+// Accesibilidad: respetar preferencia de reduccion de movimiento
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
