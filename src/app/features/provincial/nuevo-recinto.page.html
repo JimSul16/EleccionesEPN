@@ -1,0 +1,106 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/provincial" text="" />
+    </ion-buttons>
+    <ion-title>Nuevo recinto</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <form [formGroup]="form" (ngSubmit)="guardar()" novalidate>
+    <ion-input
+      formControlName="provincia"
+      label="Provincia"
+      labelPlacement="stacked"
+      fill="outline"
+      errorText="Obligatorio."
+      [class.ion-invalid]="invalido('provincia')"
+      [class.ion-touched]="invalido('provincia')"
+    />
+    <ion-input
+      formControlName="canton"
+      label="Cantón"
+      labelPlacement="stacked"
+      fill="outline"
+      errorText="Obligatorio."
+      [class.ion-invalid]="invalido('canton')"
+      [class.ion-touched]="invalido('canton')"
+    />
+    <ion-input
+      formControlName="parroquia"
+      label="Parroquia"
+      labelPlacement="stacked"
+      fill="outline"
+      errorText="Obligatorio."
+      [class.ion-invalid]="invalido('parroquia')"
+      [class.ion-touched]="invalido('parroquia')"
+    />
+    <ion-input
+      formControlName="nombre"
+      label="Nombre del recinto"
+      labelPlacement="stacked"
+      fill="outline"
+      errorText="Obligatorio."
+      [class.ion-invalid]="invalido('nombre')"
+      [class.ion-touched]="invalido('nombre')"
+    />
+    <ion-input
+      formControlName="numJrv"
+      type="number"
+      inputmode="numeric"
+      min="1"
+      max="200"
+      label="Cantidad de JRV"
+      labelPlacement="stacked"
+      fill="outline"
+      errorText="Entre 1 y 200."
+      class="tabular"
+      [class.ion-invalid]="invalido('numJrv')"
+      [class.ion-touched]="invalido('numJrv')"
+    />
+
+    <fieldset>
+      <legend>Coordenadas del recinto (opcional, para controlar el GPS de las actas)</legend>
+      <ion-input
+        formControlName="lat"
+        type="number"
+        inputmode="decimal"
+        label="Latitud"
+        labelPlacement="stacked"
+        fill="outline"
+        class="tabular"
+        errorText="Entre -90 y 90."
+        [class.ion-invalid]="invalido('lat')"
+        [class.ion-touched]="invalido('lat')"
+      />
+      <ion-input
+        formControlName="lng"
+        type="number"
+        inputmode="decimal"
+        label="Longitud"
+        labelPlacement="stacked"
+        fill="outline"
+        class="tabular"
+        errorText="Entre -180 y 180."
+        [class.ion-invalid]="invalido('lng')"
+        [class.ion-touched]="invalido('lng')"
+      />
+      <ion-button type="button" fill="outline" expand="block" [disabled]="ubicando()" (click)="usarMiUbicacion()">
+        @if (ubicando()) {
+        <ion-spinner name="crescent" aria-label="Obteniendo ubicación" />
+        } @else { Usar mi ubicación actual }
+      </ion-button>
+    </fieldset>
+
+    @if (error()) {
+    <ion-text color="danger" role="alert"><p>{{ error() }}</p></ion-text>
+    }
+
+    <ion-button type="submit" expand="block" [disabled]="guardando()">
+      @if (guardando()) {
+      <ion-spinner name="crescent" aria-label="Guardando" />
+      } @else { Crear recinto y sus JRV }
+    </ion-button>
+  </form>
+</ion-content>

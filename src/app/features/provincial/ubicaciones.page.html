@@ -1,0 +1,41 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/provincial" text="" />
+    </ion-buttons>
+    <ion-title>Ubicaciones GPS de actas</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  @let v = store.ubicaciones(); @if (v.estado === 'cargando') {
+  <div class="estado" role="status">
+    <ion-spinner name="crescent" />
+    <p>Cargando ubicaciones…</p>
+  </div>
+  } @else if (v.estado === 'error') {
+  <ion-text color="danger" role="alert"><p>{{ v.mensaje }}</p></ion-text>
+  } @else if (v.datos.length === 0) {
+  <p class="estado vacio">Todavía no hay actas con ubicación registrada.</p>
+  } @else {
+  <ion-list>
+    @for (p of v.datos; track p.acta.id) {
+    <ion-item [href]="enlaceMapa(p.acta.ubicacion!)" target="_blank" rel="noopener noreferrer" detail="true">
+      <ion-label>
+        <h2>{{ p.recinto?.nombre ?? p.acta.recintoId }} · Mesa {{ p.acta.jrvId.split('_')[1] }}</h2>
+        <p>{{ p.acta.dignidad === 'ALCALDE' ? 'Alcaldía' : 'Prefectura' }}</p>
+        <p class="tabular">
+          {{ p.acta.ubicacion!.lat.toFixed(6) }}, {{ p.acta.ubicacion!.lng.toFixed(6) }} · ±{{
+          p.acta.ubicacion!.precisionM }} m
+        </p>
+      </ion-label>
+      @if (p.lejos) {
+      <ion-badge slot="end" color="warning">Lejos del recinto</ion-badge>
+      } @else {
+      <ion-note slot="end">Abrir mapa</ion-note>
+      }
+    </ion-item>
+    }
+  </ion-list>
+  }
+</ion-content>

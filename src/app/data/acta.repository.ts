@@ -151,29 +151,36 @@ export class ActaRepository {
   /**
    * Suma de votos por organización para una dignidad, consolidado o por recinto.
    * Se calcula en el servidor (consulta de agregación), no descargando las actas.
+   * Firestore admite como máximo 5 agregaciones por consulta, por eso son dos
+   * consultas en paralelo sobre el mismo filtro.
    */
   async totales(dignidad: Dignidad, recintoId?: string): Promise<TotalesVotos> {
     const filtros = [where('dignidad', '==', dignidad)];
     if (recintoId) filtros.push(where('recintoId', '==', recintoId));
     const q = query(collection(this.fb.db, 'actas'), ...filtros);
-    const r = await getAggregateFromServer(q, {
-      actas: count(),
-      o1: sum('votos.o1'),
-      o2: sum('votos.o2'),
-      o3: sum('votos.o3'),
-      o4: sum('votos.o4'),
-      o5: sum('votos.o5'),
-      nulos: sum('nulos'),
-      blancos: sum('blancos'),
-      totalSufragantes: sum('totalSufragantes'),
-    });
-    const d = r.data();
+    const [a, b] = await Promise.all([
+      getAggregateFromServer(q, {
+        actas: count(),
+        o1: sum('votos.o1'),
+        o2: sum('votos.o2'),
+        o3: sum('votos.o3'),
+        o4: sum('votos.o4'),
+      }),
+      getAggregateFromServer(q, {
+        o5: sum('votos.o5'),
+        nulos: sum('nulos'),
+        blancos: sum('blancos'),
+        totalSufragantes: sum('totalSufragantes'),
+      }),
+    ]);
+    const x = a.data();
+    const y = b.data();
     return {
-      actas: d.actas,
-      votos: { o1: d.o1, o2: d.o2, o3: d.o3, o4: d.o4, o5: d.o5 },
-      nulos: d.nulos,
-      blancos: d.blancos,
-      totalSufragantes: d.totalSufragantes,
+      actas: x.actas,
+      votos: { o1: x.o1, o2: x.o2, o3: x.o3, o4: x.o4, o5: y.o5 },
+      nulos: y.nulos,
+      blancos: y.blancos,
+      totalSufragantes: y.totalSufragantes,
     };
   }
 

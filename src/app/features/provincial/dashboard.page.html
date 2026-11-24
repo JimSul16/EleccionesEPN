@@ -1,0 +1,73 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/provincial" text="" />
+    </ion-buttons>
+    <ion-title>Dashboard de votos</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <ion-segment [value]="dignidad()" (ionChange)="dignidad.set($any($event.detail.value))" aria-label="Dignidad">
+    <ion-segment-button value="ALCALDE"><ion-label>Alcaldía</ion-label></ion-segment-button>
+    <ion-segment-button value="PREFECTO"><ion-label>Prefectura</ion-label></ion-segment-button>
+  </ion-segment>
+
+  <ion-select
+    label="Ámbito"
+    labelPlacement="stacked"
+    interface="action-sheet"
+    cancelText="Cancelar"
+    [value]="recintoId()"
+    (ionChange)="recintoId.set($event.detail.value)"
+  >
+    <ion-select-option value="">Consolidado provincial</ion-select-option>
+    @for (r of store.listaRecintos(); track r.id) {
+    <ion-select-option [value]="r.id">{{ r.nombre }}</ion-select-option>
+    }
+  </ion-select>
+
+  @let e = estado(); @if (e.estado === 'cargando') {
+  <div class="estado" role="status">
+    <ion-spinner name="crescent" />
+    <p>Calculando totales…</p>
+  </div>
+  } @else if (e.estado === 'error') {
+  <ion-text color="danger" role="alert"><p>{{ e.mensaje }}</p></ion-text>
+  } @else {
+  <p class="tabular">
+    {{ e.totales.actas }} actas · {{ e.totales.totalSufragantes }} sufragantes · nulos {{ e.totales.nulos }} · blancos
+    {{ e.totales.blancos }}
+  </p>
+  @if (e.totales.actas === 0) {
+  <p class="estado vacio">Todavía no hay actas registradas para esta selección.</p>
+  } }
+
+  <div class="grafico" [hidden]="estado().estado !== 'listo'">
+    <canvas #grafico role="img" aria-label="Gráfico de barras de votos por candidatura"></canvas>
+  </div>
+
+  @if (estado().estado === 'listo') {
+  <table class="tabla-resultados">
+    <caption>
+      Votos por candidatura ({{ dignidad() === 'ALCALDE' ? 'alcaldía' : 'prefectura' }})
+    </caption>
+    <thead>
+      <tr>
+        <th scope="col">Candidatura</th>
+        <th scope="col">Votos</th>
+        <th scope="col">% válidos</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (f of filas(); track f.etiqueta) {
+      <tr>
+        <th scope="row">{{ f.etiqueta }}</th>
+        <td class="tabular">{{ f.votos }}</td>
+        <td class="tabular">{{ f.porcentaje }} %</td>
+      </tr>
+      }
+    </tbody>
+  </table>
+  }
+</ion-content>

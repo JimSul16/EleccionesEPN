@@ -3,8 +3,6 @@ import type { Routes } from '@angular/router';
 
 import { authGuard, invitadoGuard, primerAccesoGuard, rolGuard } from './core/guards';
 
-const inicioRol = (): Promise<Type<unknown>> =>
-  import('./features/shared/inicio-rol.page').then((m) => m.InicioRolPage);
 const crearUsuario = (): Promise<Type<unknown>> =>
   import('./features/usuarios/crear-usuario.page').then((m) => m.CrearUsuarioPage);
 
@@ -28,8 +26,27 @@ export const routes: Routes = [
   {
     path: 'provincial',
     canActivate: [authGuard, primerAccesoGuard, rolGuard('PROVINCIAL')],
-    loadComponent: inicioRol,
-    data: { titulo: 'Coordinación provincial' },
+    children: [
+      { path: '', loadComponent: () => import('./features/provincial/recintos.page').then((m) => m.RecintosPage) },
+      {
+        path: 'dashboard',
+        loadComponent: () => import('./features/provincial/dashboard.page').then((m) => m.DashboardPage),
+      },
+      {
+        path: 'ubicaciones',
+        loadComponent: () => import('./features/provincial/ubicaciones.page').then((m) => m.UbicacionesPage),
+      },
+      {
+        path: 'recintos/nuevo',
+        loadComponent: () => import('./features/provincial/nuevo-recinto.page').then((m) => m.NuevoRecintoPage),
+      },
+      {
+        // Crear el coordinador de un recinto: el recintoId llega como input de la página.
+        path: 'recintos/:recintoId/coordinador',
+        loadComponent: crearUsuario,
+        data: { rol: 'RECINTO' },
+      },
+    ],
   },
   {
     path: 'recinto',

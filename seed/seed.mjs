@@ -25,6 +25,8 @@ const { getAuth } = require('firebase-admin/auth');
 const { getFirestore, FieldValue } = require('firebase-admin/firestore');
 
 const DEMO = process.argv.includes('--demo');
+/** Actas de ejemplo para mostrar el dashboard y las ubicaciones (solo emulador o demo). */
+const ACTAS_DEMO = process.argv.includes('--actas-demo');
 const PASSWORD_INICIAL = 'Ecuador2026';
 
 initializeApp({ projectId: process.env.GCLOUD_PROJECT ?? process.env.FIREBASE_PROJECT ?? 'elecciones-epn' });
@@ -95,29 +97,20 @@ const CANDIDATOS = [
 /** Crea (o reutiliza) un usuario de Auth con su perfil, índice de cédula y claims. */
 async function asegurarUsuario({ cedula: ced, nombres, apellidos, telefono, email, rol, recintoId }) {
   let uid;
+  let nuevo = false;
   try {
     uid = (await auth.getUserByEmail(email)).uid;
   } catch {
     uid = (await auth.createUser({ email, password: PASSWORD_INICIAL, displayName: `${nombres} ${apellidos}` })).uid;
+    nuevo = true;
   }
   await auth.setCustomUserClaims(uid, recintoId ? { rol, recintoId } : { rol });
   const lote = db.batch();
-  lote.set(
-    db.doc(`usuarios/${uid}`),
-    {
-      cedula: ced,
-      nombres,
-      apellidos,
-      telefono,
-      email,
-      rol,
-      recintoId: recintoId ?? null,
-      debeCambiarPassword: true,
-      creadoPor: 'seed',
-      creadoEn: FieldValue.serverTimestamp(),
-    },
-    { merge: true },
-  );
+  const perfil = { cedula: ced, nombres, apellidos, telefono, email, rol, recintoId: recintoId ?? null };
+  // Solo al crear: volver a correr el seed no debe obligar a cambiar otra vez la contraseña.
+  if (nuevo)
+    Object.assign(perfil, { debeCambiarPassword: true, creadoPor: 'seed', creadoEn: FieldValue.serverTimestamp() });
+  lote.set(db.doc(`usuarios/${uid}`), perfil, { merge: true });
   lote.set(db.doc(`cedulas/${ced}`), { uid });
   await lote.commit();
   return uid;
@@ -208,12 +201,65 @@ async function main() {
     );
   }
 
+  if (ACTAS_DEMO) {
+    const n = await sembrarActasDemo();
+    resumen.push(`Actas demo: ${n} (una registrada lejos de su recinto para mostrar la alerta GPS)`);
+  }
+
   const totalJrv = RECINTOS.reduce((s, r) => s + r.numJrv, 0);
   console.log(
     `Seed listo: ${RECINTOS.length} recintos, ${totalJrv} JRV, ${ORGANIZACIONES.length} organizaciones, ${CANDIDATOS.length} candidaturas.`,
   );
   console.log(`Contraseña inicial de todas las cuentas: ${PASSWORD_INICIAL} (se exige cambiarla al entrar).`);
   resumen.forEach((l) => console.log('  ' + l));
+}
+
+/**
+ * Actas coherentes (los totales cuadran) en varias mesas de r02..r05, fuera de las
+ * mesas demo del veedor para no interferir con la prueba manual. Generador
+ * determinista: siempre produce los mismos números.
+ */
+async function sembrarActasDemo() {
+  let semilla = 7;
+  const azar = (max) => {
+    semilla = (semilla * 16807) % 2147483647;
+    return semilla % max;
+  };
+  const lote = db.batch();
+  let n = 0;
+  for (const r of RECINTOS.filter((x) => ['r02', 'r03', 'r04', 'r05'].includes(x.id))) {
+    for (let mesa = 1; mesa <= Math.min(3, r.numJrv); mesa++) {
+      for (const dignidad of ['ALCALDE', 'PREFECTO']) {
+        const votos = { o1: 40 + azar(80), o2: 30 + azar(70), o3: 10 + azar(50), o4: 5 + azar(30), o5: azar(20) };
+        const nulos = azar(12);
+        const blancos = azar(10);
+        const total = Object.values(votos).reduce((s, v) => s + v, 0) + nulos + blancos;
+        // La mesa 1 de r05 se registra a 3 km: el dashboard de ubicaciones debe marcarla.
+        const lejos = r.id === 'r05' && mesa === 1;
+        const jrvId = `${r.id}_${mesa}`;
+        lote.set(db.doc(`actas/${jrvId}_${dignidad}`), {
+          jrvId,
+          recintoId: r.id,
+          dignidad,
+          votos,
+          nulos,
+          blancos,
+          totalSufragantes: total,
+          fotoPath: null,
+          ubicacion: { lat: r.lat + (lejos ? 0.027 : 0.0003), lng: r.lng, precisionM: 8 + azar(20) },
+          estado: 'REGISTRADA',
+          version: 1,
+          registradoPor: 'seed',
+          updatedBy: 'seed',
+          createdAt: FieldValue.serverTimestamp(),
+          updatedAt: FieldValue.serverTimestamp(),
+        });
+        n++;
+      }
+    }
+  }
+  await lote.commit();
+  return n;
 }
 
 main().then(

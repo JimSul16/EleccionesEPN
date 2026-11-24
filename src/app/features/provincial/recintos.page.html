@@ -1,0 +1,58 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-title>Coordinación provincial</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="salir()">Salir</ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <app-estado-red />
+
+  <nav class="acciones" aria-label="Secciones">
+    <ion-button routerLink="/provincial/dashboard">Dashboard de votos</ion-button>
+    <ion-button fill="outline" routerLink="/provincial/ubicaciones">Ubicaciones GPS</ion-button>
+    <ion-button fill="outline" routerLink="/provincial/recintos/nuevo">Nuevo recinto</ion-button>
+  </nav>
+
+  @let v = store.avance(); @if (v.estado === 'cargando') {
+  <div class="estado" role="status">
+    <ion-spinner name="crescent" />
+    <p>Cargando recintos…</p>
+  </div>
+  } @else if (v.estado === 'error') {
+  <ion-text color="danger" role="alert"><p>{{ v.mensaje }}</p></ion-text>
+  } @else {
+  <p class="tabular">
+    Avance provincial: <strong>{{ v.datos.registradas }}</strong> de {{ v.datos.esperadas }} actas registradas
+  </p>
+  <ion-progress-bar [value]="v.datos.esperadas ? v.datos.registradas / v.datos.esperadas : 0" />
+
+  @if (v.datos.filas.length === 0) {
+  <p class="estado vacio">No hay recintos. Cree el primero con "Nuevo recinto".</p>
+  } @for (f of v.datos.filas; track f.recinto.id) {
+  <ion-card>
+    <ion-card-header>
+      <ion-card-title>{{ f.recinto.nombre }}</ion-card-title>
+      <ion-card-subtitle
+        >{{ f.recinto.parroquia }} · {{ f.recinto.canton }} · {{ f.recinto.numJrv }} JRV</ion-card-subtitle
+      >
+    </ion-card-header>
+    <ion-card-content>
+      <p class="tabular">Actas: {{ f.actasRegistradas }} / {{ f.actasEsperadas }} ({{ f.porcentaje }} %)</p>
+      <ion-progress-bar [value]="f.porcentaje / 100" />
+      @if (f.coordinador) {
+      <p>Coordinador: {{ f.coordinador.nombres }} {{ f.coordinador.apellidos }}</p>
+      } @else if (f.recinto.coordinadorId) {
+      <p>Coordinador asignado</p>
+      } @else {
+      <ion-badge color="danger">Sin coordinador</ion-badge>
+      <ion-button size="small" fill="outline" [routerLink]="['/provincial/recintos', f.recinto.id, 'coordinador']">
+        Asignar coordinador
+      </ion-button>
+      }
+    </ion-card-content>
+  </ion-card>
+  } }
+</ion-content>

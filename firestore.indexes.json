@@ -1,4 +1,21 @@
 {
-  "indexes": [],
+  "indexes": [
+    {
+      "collectionGroup": "actas",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "dignidad", "order": "ASCENDING" },
+        { "fieldPath": "recintoId", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "usuarios",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "recintoId", "order": "ASCENDING" },
+        { "fieldPath": "rol", "order": "ASCENDING" }
+      ]
+    }
+  ],
   "fieldOverrides": []
 }
