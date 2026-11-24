@@ -7,6 +7,36 @@ Congelar el código el miércoles a las 11:00.
 
 ---
 
+## Estado al lunes 23-nov (noche)
+
+Todo está unido en `main` (commit `6d4bd21`). Detalle por tarea en [agents/BOARD.md](agents/BOARD.md).
+
+**Hecho y verificado**
+- R1 seed: 6 recintos de Pichincha/Quito, 33 JRV, 5 organizaciones, 10 candidaturas. `seed/seed.mjs` (`--demo` crea cuentas de prueba; `--actas-demo` crea 24 actas para el dashboard).
+- R2/R3: cuentas por jerarquía, login por cédula, cambio obligatorio y recuperación (Cloud Functions). 13 pruebas de integración.
+- R4: provincial con recintos, avance, coordinadores, dashboard y ubicaciones GPS con alerta de actas lejanas.
+- R5: coordinador de recinto con mesas, crear veedor, asignar y reasignar, corregir actas.
+- R6/R7: veedor con sus mesas, acta con validación en vivo, foto con nitidez, GPS y permisos.
+- R8: reglas de Firestore y Storage; 30 tests de reglas (`npm run test:rules`).
+- R9: capas core/domain/data/features, stores con signals, estados de carga, error y vacío.
+- R10: caché offline de Firestore, cola de fotos en IndexedDB, indicador de pendientes y conflictos por versión.
+- UI: tokens Carbon y pantallas de acceso con estilo (OpenCode). Ícono, splash, SVG, Lottie (Antigravity).
+- Calidad: lint limpio, 41 tests unitarios, build de app y Functions.
+
+**Bugs encontrados al probar y corregidos**: lectura de actas inexistentes en las reglas, `inject()` después de `await` en guards (NG0203), bucle infinito en un `effect` del dashboard, límite de 5 agregaciones por consulta, dependencia `file:..` en Functions, `test:rules` sin `--project`.
+
+**Pendiente (orden de prioridad)**
+1. Consola (usuario): Blaze activo, proveedor Correo/contraseña, plantillas en español, rol Token Creator en IAM.
+2. Deploy de reglas, índices y Functions (Antigravity).
+3. **APK nuevo desde `main`** y prueba en teléfono: cámara, nitidez, GPS, guardado, modo avión (Antigravity + usuario).
+4. Calibrar el umbral de nitidez con fotos reales de actas (Claude, con los puntajes que reporte la prueba).
+5. **Repositorio en GitHub** con el historial y el APK como Release (Antigravity + usuario).
+6. ADR-001..017 en `docs/adr`, README, `docs/IA.md`, guía de defensa (Claude).
+7. Estilo de las pantallas nuevas (OpenCode).
+8. Entregables de grupo y coevaluación (usuario con su grupo).
+
+---
+
 ## 0. Dónde están los puntos (rúbrica, 20 pts de práctica)
 
 | Bloque | Pts | Prioridad |
@@ -204,15 +234,19 @@ cd android; .\gradlew.bat assembleDebug
 
 ---
 
-## 11. Cronograma (desde el lunes 23)
+## 11. Cronograma (replanificado el lunes 23 por la noche)
 
-| Día | Antigravity (setup) | Claude Code (programación) |
-|---|---|---|
-| **Lun 23 mañana** | S-01 a S-04: scaffold, Firebase, primer APK | domain/ (validadores + tests), modelos, contratos |
-| **Lun 23 tarde** | deploy de reglas y Functions | reglas + test de aislamiento, Functions de usuarios y login, AuthService y guards |
-| **Mar 24** | APK debug al final del día | flujo del veedor completo, luego recinto, provincial y dashboard |
-| **Mié 25 hasta 11:00** | APK release + GitHub Release | offline si da el tiempo, README, `docs/IA.md` |
-| **Mié 25 antes de 14:00** | - | entrega (yo) |
+El lunes se adelantó todo el código previsto para el martes. Lo que queda:
+
+| Momento | Usuario | Antigravity | Claude | OpenCode |
+|---|---|---|---|---|
+| **Mar 24 mañana** | Consola: Blaze, Correo/contraseña, plantillas, rol IAM. Crear repo vacío en GitHub | Deploy (A-04), APK debug desde `main`, prueba en teléfono | ADR-001..017 | Estilo de veedor y acta (T-010a) |
+| **Mar 24 tarde** | Probar los 3 roles en el teléfono con Antigravity; reunión de grupo si falta | Push a GitHub, seed de producción | README, `docs/IA.md`, guía de defensa, calibrar nitidez | Estilo de recinto, provincial, dashboard (T-010b), T-011 |
+| **Mar 24 noche** | Revisar ADR e IA.md, completar con sus prompts reales | APK debug final | Verificación completa, merge de OpenCode | - |
+| **Mié 25 hasta 11:00** | Congelar código | APK release firmado + GitHub Release | Último ajuste del README con el enlace al APK | - |
+| **Mié 25 antes de 14:00** | Entregar repo, APK, ADR de grupo, acta, video y coevaluación | - | - | - |
+
+Lo que manda si falta tiempo: APK funcionando en el teléfono > README y ADR > IA.md > estilo de pantallas nuevas.
 
 Commits con referencia al ADR (`feat(veedor): validacion de totales [ADR-007]`).
 

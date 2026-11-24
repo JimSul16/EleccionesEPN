@@ -5,6 +5,16 @@ el kit de diseño, los ADR de UI, los roles de Claude Code, OpenCode y Antigravi
 
 **Cambio 23-nov:** el backend es **Firebase con plan Blaze**. Para ahorrar tokens de Claude, **Antigravity se encarga de instalar el framework y las librerías, configurar Firebase y generar el APK**; **Claude Code solo programa**.
 
+**Cómo se trabajó en realidad (23-nov), y cómo se sigue:**
+- Cada agente trabaja en **su propia carpeta (git worktree) y su propia rama**, para no compartir el árbol de trabajo:
+  - Carpeta principal `EleccionesEPN`: rama `main` (y OpenCode crea ahí su rama de trabajo).
+  - `../EleccionesEPN-claude`: Claude, rama `agent/claude/...`.
+  - `../EleccionesEPN-antigravity`: Antigravity, rama `agent/antigravity/...`.
+- Toda rama nueva parte de `main` actualizado. Nadie hace merge a `main` salvo Claude, con la verificación completa (lint, tests unitarios, `test:rules`, integración, build) y la aprobación del usuario.
+- En esta PC los emuladores necesitan `JAVA_TOOL_OPTIONS=-Djdk.net.unixdomain.tmpdir=C:\Users\Public` (ver `docs/setup/EMULADORES.md`).
+- Lecciones del 23-nov: un agente commiteó en la rama de otro; otro agregó por error `"elecciones-epn": "file:.."` a Functions. Por eso: cada agente verifica `git branch --show-current` antes de commitear y revisa `git diff --stat` del commit.
+- Prompts de trabajo para el martes 24: [agents/PROMPTS.md](agents/PROMPTS.md).
+
 Alcance: app **EleccionesEPN** (Ionic Angular standalone + Capacitor + Firebase). Es "multi-repositorio"
 porque cada integrante del grupo tiene su repo individual con la misma línea base. Este plan sirve
 para el repo propio y puede compartirse como propuesta de ADR de diseño al grupo.
