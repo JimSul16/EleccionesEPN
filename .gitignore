@@ -99,3 +99,9 @@ ui-debug.log*
 functions/lib/
 functions/node_modules/
 
+
+# Credenciales de servicio: nunca versionar
+.env2/
+*adminsdk*.json
+*service-account*.json
+*serviceAccount*.json
