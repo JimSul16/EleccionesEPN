@@ -5,6 +5,8 @@ import { authGuard, invitadoGuard, primerAccesoGuard, rolGuard } from './core/gu
 
 const inicioRol = (): Promise<Type<unknown>> =>
   import('./features/shared/inicio-rol.page').then((m) => m.InicioRolPage);
+const crearUsuario = (): Promise<Type<unknown>> =>
+  import('./features/usuarios/crear-usuario.page').then((m) => m.CrearUsuarioPage);
 
 export const routes: Routes = [
   {
@@ -32,8 +34,13 @@ export const routes: Routes = [
   {
     path: 'recinto',
     canActivate: [authGuard, primerAccesoGuard, rolGuard('RECINTO')],
-    loadComponent: inicioRol,
-    data: { titulo: 'Coordinación de recinto' },
+    loadComponent: () => import('./features/recinto/mesas-recinto.page').then((m) => m.MesasRecintoPage),
+  },
+  {
+    path: 'recinto/veedores/nuevo',
+    canActivate: [authGuard, primerAccesoGuard, rolGuard('RECINTO')],
+    loadComponent: crearUsuario,
+    data: { rol: 'VEEDOR' },
   },
   {
     path: 'veedor',

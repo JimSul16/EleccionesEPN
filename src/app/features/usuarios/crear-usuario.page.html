@@ -1,0 +1,96 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/" text="" />
+    </ion-buttons>
+    <ion-title>{{ titulo() }}</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  @if (creado(); as c) {
+  <div role="status">
+    <ion-text color="success"
+      ><p><strong>Cuenta creada para {{ c.nombre }}.</strong></p></ion-text
+    >
+    <p>Ingresa con su cédula y la contraseña inicial <strong>{{ passwordInicial }}</strong>; se le pedirá cambiarla.</p>
+    @if (c.correoEnviado) {
+    <p>Se envió un correo de confirmación de cuenta.</p>
+    } @else {
+    <ion-text color="warning"
+      ><p>No se pudo enviar el correo de confirmación. La cuenta igual quedó creada.</p></ion-text
+    >
+    }
+  </div>
+  @if (rol() === 'VEEDOR') {
+  <ion-button expand="block" (click)="otro()">Crear otro veedor</ion-button>
+  }
+  <ion-button expand="block" fill="outline" (click)="volver()">Volver</ion-button>
+  } @else {
+  <form [formGroup]="form" (ngSubmit)="crear()" novalidate>
+    <ion-input
+      formControlName="cedula"
+      label="Cédula"
+      labelPlacement="stacked"
+      fill="outline"
+      inputmode="numeric"
+      maxlength="10"
+      [errorText]="mensaje('cedula')"
+      [class.ion-invalid]="!!mensaje('cedula')"
+      [class.ion-touched]="!!mensaje('cedula')"
+    />
+    <ion-input
+      formControlName="nombres"
+      label="Nombres"
+      labelPlacement="stacked"
+      fill="outline"
+      autocapitalize="words"
+      [errorText]="mensaje('nombres')"
+      [class.ion-invalid]="!!mensaje('nombres')"
+      [class.ion-touched]="!!mensaje('nombres')"
+    />
+    <ion-input
+      formControlName="apellidos"
+      label="Apellidos"
+      labelPlacement="stacked"
+      fill="outline"
+      autocapitalize="words"
+      [errorText]="mensaje('apellidos')"
+      [class.ion-invalid]="!!mensaje('apellidos')"
+      [class.ion-touched]="!!mensaje('apellidos')"
+    />
+    <ion-input
+      formControlName="telefono"
+      label="Celular"
+      labelPlacement="stacked"
+      fill="outline"
+      inputmode="tel"
+      maxlength="10"
+      [errorText]="mensaje('telefono')"
+      [class.ion-invalid]="!!mensaje('telefono')"
+      [class.ion-touched]="!!mensaje('telefono')"
+    />
+    <ion-input
+      formControlName="email"
+      type="email"
+      label="Correo"
+      labelPlacement="stacked"
+      fill="outline"
+      inputmode="email"
+      [errorText]="mensaje('email')"
+      [class.ion-invalid]="!!mensaje('email')"
+      [class.ion-touched]="!!mensaje('email')"
+    />
+
+    @if (error()) {
+    <ion-text color="danger" role="alert"><p>{{ error() }}</p></ion-text>
+    }
+
+    <ion-button type="submit" expand="block" [disabled]="guardando()">
+      @if (guardando()) {
+      <ion-spinner name="crescent" aria-label="Creando cuenta" />
+      } @else { Crear cuenta }
+    </ion-button>
+  </form>
+  }
+</ion-content>

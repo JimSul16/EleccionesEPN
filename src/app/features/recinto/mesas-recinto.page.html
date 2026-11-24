@@ -1,0 +1,66 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-title>{{ store.nombreRecinto() || 'Mi recinto' }}</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="salir()">Salir</ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <app-estado-red />
+
+  <ion-button expand="block" routerLink="/recinto/veedores/nuevo">Crear veedor</ion-button>
+
+  @if (store.avance(); as a) {
+  <p class="tabular">Avance: {{ a.completas }} de {{ a.total }} mesas completas</p>
+  <ion-progress-bar [value]="a.total ? a.completas / a.total : 0" />
+  } @if (store.errorAsignacion()) {
+  <ion-text color="danger" role="alert"><p>{{ store.errorAsignacion() }}</p></ion-text>
+  } @let v = store.vista(); @if (v.estado === 'cargando') {
+  <div class="estado" role="status">
+    <ion-spinner name="crescent" />
+    <p>Cargando mesas…</p>
+  </div>
+  } @else if (v.estado === 'error') {
+  <ion-text color="danger" role="alert"><p>{{ v.mensaje }}</p></ion-text>
+  } @else { @if (v.veedores.length === 0) {
+  <p class="estado vacio">Aún no hay veedores en este recinto. Cree uno para poder asignar mesas.</p>
+  } @for (fila of v.filas; track fila.jrv.id) {
+  <ion-card>
+    <ion-card-header>
+      <ion-card-title>Mesa {{ fila.jrv.numero }}</ion-card-title>
+      <ion-card-subtitle>
+        <ion-badge [color]="etiquetaEstado[fila.estado].color">{{ etiquetaEstado[fila.estado].texto }}</ion-badge>
+      </ion-card-subtitle>
+    </ion-card-header>
+    <ion-card-content>
+      <ion-select
+        label="Veedor"
+        labelPlacement="stacked"
+        interface="action-sheet"
+        cancelText="Cancelar"
+        [value]="fila.jrv.veedorId ?? sinVeedor"
+        [disabled]="store.asignando() === fila.jrv.id"
+        (ionChange)="cambiarVeedor(fila, $event.detail.value)"
+      >
+        <ion-select-option [value]="sinVeedor">Sin veedor</ion-select-option>
+        @for (veedor of v.veedores; track veedor.uid) {
+        <ion-select-option [value]="veedor.uid">{{ veedor.apellidos }} {{ veedor.nombres }}</ion-select-option>
+        }
+      </ion-select>
+
+      @for (d of dignidades; track d) {
+      <ion-button fill="outline" expand="block" [routerLink]="['/acta', fila.jrv.id, d]">
+        {{ fila.actas[d] ? 'Ver o corregir' : 'Registrar' }} acta de {{ nombreDignidad(d) }} @if (fila.actas[d]; as
+        acta) {
+        <ion-badge slot="end" [color]="acta.estado === 'CORREGIDA' ? 'warning' : 'success'"
+          >v{{ acta.version }}</ion-badge
+        >
+        }
+      </ion-button>
+      }
+    </ion-card-content>
+  </ion-card>
+  } }
+</ion-content>
