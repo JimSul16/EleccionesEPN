@@ -1,8 +1,170 @@
 rules_version = '2';
+
+// Autorización real del sistema (R8). La app oculta pantallas por rol, pero quien
+// decide es este archivo. Los roles llegan como custom claims (rol, recintoId)
+// puestos por la Cloud Function crearUsuario; el cliente no puede modificarlos.
+//
+// Nota: las reglas NO son filtros. Las consultas de lista deben incluir el mismo
+// filtro que exige la regla (por ejemplo where('recintoId', '==', miRecinto)).
+// El veedor lee mesas con where('veedorId', '==', uid) y actas por ID.
+
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /{document=**} {
-      allow read, write: if request.auth != null;
+
+    // ---------- Helpers de identidad ----------
+    function autenticado() { return request.auth != null; }
+    function uid() { return request.auth.uid; }
+    function rol() { return request.auth.token.rol; }
+    function miRecinto() { return request.auth.token.recintoId; }
+    function esProvincial() { return autenticado() && rol() == 'PROVINCIAL'; }
+    function esRecinto() { return autenticado() && rol() == 'RECINTO'; }
+    function esVeedor() { return autenticado() && rol() == 'VEEDOR'; }
+
+    function jrv(id) { return get(/databases/$(database)/documents/jrv/$(id)).data; }
+
+    // ---------- Helpers de validación ----------
+    function enteroValido(v) { return v is int && v >= 0 && v <= 100000; }
+
+    function cambiaSolo(campos) {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(campos);
+    }
+
+    // Mismo criterio que src/app/domain/acta.rules.ts
+    function conteoValido(d) {
+      return d.votos is map
+        && d.votos.keys().hasOnly(['o1', 'o2', 'o3', 'o4', 'o5'])
+        && d.votos.keys().hasAll(['o1', 'o2', 'o3', 'o4', 'o5'])
+        && enteroValido(d.votos.o1) && enteroValido(d.votos.o2) && enteroValido(d.votos.o3)
+        && enteroValido(d.votos.o4) && enteroValido(d.votos.o5)
+        && enteroValido(d.nulos) && enteroValido(d.blancos) && enteroValido(d.totalSufragantes)
+        && d.votos.o1 + d.votos.o2 + d.votos.o3 + d.votos.o4 + d.votos.o5 + d.nulos + d.blancos
+           == d.totalSufragantes;
+    }
+
+    function ubicacionValida(u) {
+      return u == null || (u is map
+        && u.keys().hasOnly(['lat', 'lng', 'precisionM'])
+        && u.lat is number && u.lat >= -90 && u.lat <= 90
+        && u.lng is number && u.lng >= -180 && u.lng <= 180
+        && u.precisionM is number && u.precisionM >= 0);
+    }
+
+    function actaBienFormada(id, d) {
+      return d.keys().hasOnly(['jrvId', 'recintoId', 'dignidad', 'votos', 'nulos', 'blancos',
+                               'totalSufragantes', 'fotoPath', 'ubicacion', 'estado', 'version',
+                               'registradoPor', 'updatedBy', 'createdAt', 'updatedAt'])
+        && d.dignidad in ['ALCALDE', 'PREFECTO']
+        && id == d.jrvId + '_' + d.dignidad
+        && (d.fotoPath == null || (d.fotoPath is string
+            && d.fotoPath.matches('actas/' + d.recintoId + '/' + d.jrvId + '/' + d.dignidad + '-[A-Za-z0-9-]+[.]jpg')))
+        && ubicacionValida(d.ubicacion)
+        && d.estado in ['REGISTRADA', 'CORREGIDA']
+        && d.updatedBy == uid()
+        && d.updatedAt == request.time
+        && conteoValido(d);
+    }
+
+    // Veedor asignado a la mesa, o coordinador del recinto de la mesa.
+    function puedeEscribirActa(jrvId) {
+      let mesa = jrv(jrvId);
+      return (esVeedor() && mesa.veedorId == uid())
+          || (esRecinto() && mesa.recintoId == miRecinto());
+    }
+
+    // ---------- Usuarios: solo los escriben las Cloud Functions ----------
+    match /usuarios/{usuarioId} {
+      allow get: if autenticado() && (usuarioId == uid() || esProvincial()
+                    || (esRecinto() && resource.data.recintoId == miRecinto()));
+      allow list: if esProvincial() || (esRecinto() && resource.data.recintoId == miRecinto());
+      allow write: if false;
+    }
+
+    // Índice cédula -> uid, privado.
+    match /cedulas/{cedula} {
+      allow read, write: if false;
+    }
+
+    // ---------- Catálogos (R1): solo lectura, se cargan con el seed ----------
+    match /organizaciones/{id} {
+      allow read: if autenticado();
+      allow write: if false;
+    }
+    match /candidatos/{id} {
+      allow read: if autenticado();
+      allow write: if false;
+    }
+
+    // ---------- Recintos (R4) ----------
+    match /recintos/{recintoId} {
+      allow read: if esProvincial() || (autenticado() && miRecinto() == recintoId);
+      allow create: if esProvincial()
+        && request.resource.data.keys().hasOnly(['provincia', 'canton', 'parroquia', 'nombre', 'numJrv', 'lat', 'lng', 'coordinadorId'])
+        && request.resource.data.nombre is string && request.resource.data.nombre.size() > 0
+        && request.resource.data.numJrv is int && request.resource.data.numJrv > 0 && request.resource.data.numJrv <= 200
+        && request.resource.data.coordinadorId == null;
+      // coordinadorId lo asigna la Function crearUsuario.
+      allow update: if esProvincial() && cambiaSolo(['provincia', 'canton', 'parroquia', 'nombre', 'lat', 'lng']);
+      allow delete: if false;
+    }
+
+    // ---------- Mesas / JRV (R4, R5, R6) ----------
+    match /jrv/{jrvId} {
+      allow get, list: if esProvincial()
+        || (esRecinto() && resource.data.recintoId == miRecinto())
+        || (esVeedor() && resource.data.veedorId == uid());
+
+      allow create: if esProvincial()
+        && request.resource.data.keys().hasOnly(['recintoId', 'numero', 'veedorId'])
+        && request.resource.data.numero is int && request.resource.data.numero > 0
+        && jrvId == request.resource.data.recintoId + '_' + string(request.resource.data.numero)
+        && request.resource.data.veedorId == null
+        && exists(/databases/$(database)/documents/recintos/$(request.resource.data.recintoId));
+
+      // Asignar o reasignar veedor: solo el coordinador del recinto, solo ese campo,
+      // y el veedor tiene que ser de su mismo recinto.
+      allow update: if esRecinto()
+        && resource.data.recintoId == miRecinto()
+        && cambiaSolo(['veedorId'])
+        && (request.resource.data.veedorId == null || (
+              get(/databases/$(database)/documents/usuarios/$(request.resource.data.veedorId)).data.rol == 'VEEDOR'
+              && get(/databases/$(database)/documents/usuarios/$(request.resource.data.veedorId)).data.recintoId == miRecinto()));
+
+      allow delete: if false;
+    }
+
+    // ---------- Actas (R5, R6, R7) ----------
+    match /actas/{actaId} {
+      // El veedor lee sus actas por ID ({jrvId}_{dignidad}).
+      allow get: if esProvincial()
+        || (esRecinto() && resource.data.recintoId == miRecinto())
+        || (esVeedor() && jrv(resource.data.jrvId).veedorId == uid());
+      allow list: if esProvincial() || (esRecinto() && resource.data.recintoId == miRecinto());
+
+      allow create: if puedeEscribirActa(request.resource.data.jrvId)
+        && actaBienFormada(actaId, request.resource.data)
+        && request.resource.data.recintoId == jrv(request.resource.data.jrvId).recintoId
+        && request.resource.data.version == 1
+        && request.resource.data.registradoPor == uid()
+        && request.resource.data.createdAt == request.time;
+
+      // Corrección: control optimista de versión. Si otro escribió antes, la versión
+      // ya no es la esperada y la escritura se rechaza (estrategia de conflictos R10).
+      allow update: if puedeEscribirActa(resource.data.jrvId)
+        && actaBienFormada(actaId, request.resource.data)
+        && request.resource.data.version == resource.data.version + 1
+        && request.resource.data.jrvId == resource.data.jrvId
+        && request.resource.data.recintoId == resource.data.recintoId
+        && request.resource.data.dignidad == resource.data.dignidad
+        && request.resource.data.registradoPor == resource.data.registradoPor
+        && request.resource.data.createdAt == resource.data.createdAt;
+
+      allow delete: if false;
+    }
+
+    // ---------- Auditoría: la escribe una Function trigger ----------
+    match /auditoria/{id} {
+      allow get, list: if esProvincial() || (esRecinto() && resource.data.recintoId == miRecinto());
+      allow write: if false;
     }
   }
 }

@@ -1,0 +1,41 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-title>Recuperar contraseña</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  @if (mensaje()) {
+  <ion-text color="success" role="status">
+    <p>{{ mensaje() }}</p>
+  </ion-text>
+  <ion-button expand="block" routerLink="/login">Volver al inicio</ion-button>
+  } @else {
+  <form [formGroup]="form" (ngSubmit)="enviar()" novalidate>
+    <ion-input
+      formControlName="cedula"
+      label="Cédula"
+      labelPlacement="stacked"
+      fill="outline"
+      inputmode="numeric"
+      maxlength="10"
+      errorText="Ingrese una cédula válida."
+      [class.ion-invalid]="form.controls.cedula.touched && form.controls.cedula.invalid"
+      [class.ion-touched]="form.controls.cedula.touched"
+    />
+
+    @if (error()) {
+    <ion-text color="danger" role="alert">
+      <p>{{ error() }}</p>
+    </ion-text>
+    }
+
+    <ion-button type="submit" expand="block" [disabled]="cargando()">
+      @if (cargando()) {
+      <ion-spinner name="crescent" aria-label="Enviando" />
+      } @else { Enviar correo }
+    </ion-button>
+    <ion-button fill="clear" expand="block" routerLink="/login">Cancelar</ion-button>
+  </form>
+  }
+</ion-content>
