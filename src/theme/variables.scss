@@ -108,6 +108,44 @@
   --ion-color-medium-tint: var(--app-ink-subtle);
 }
 
+/* Espacio inferior para texto de error de ion-input (T-011): evita que el
+   mensaje de error quede tapado por el campo de entrada siguiente. */
+ion-input.ion-invalid {
+  --padding-bottom: var(--app-space-4);
+}
+
+/* Ajuste compatible: cuando el input está tocado y tiene error */
+ion-input.ion-touched.ion-invalid {
+  margin-bottom: var(--app-space-4);
+}
+
+/* Estilizado del aviso de conexión (T-012) */
+.estado-red {
+  display: flex;
+  align-items: center;
+  gap: var(--app-space-2);
+  padding: var(--app-space-3);
+  border: var(--app-hairline) solid var(--app-ink-subtle);
+  border-radius: var(--app-radius-none);
+  font-size: var(--app-text-sm);
+}
+
+.estado-red.sin-red {
+  background: var(--ion-color-warning);
+  color: var(--ion-color-warning-contrast);
+}
+
+.estado-red.sincronizando {
+  background: var(--app-surface-1);
+  color: var(--app-ink);
+}
+
+.estado-red__icono {
+  width: 1em;
+  height: 1em;
+  flex-shrink: 0;
+}
+
 // --- Modo oscuro: tokens inversos (DESIGN.md inverse-*) ---
 // El selector repite :root.md/:root.ios porque dark.system.css declara
 // --ion-background-color y --ion-text-color en :root.md/:root.ios (peso

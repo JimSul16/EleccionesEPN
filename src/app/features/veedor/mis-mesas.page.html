@@ -13,13 +13,17 @@
 
   @switch (store.vista().estado) { @case ('cargando') {
   <div class="estado" role="status">
-    <ion-spinner name="crescent" />
-    <p>Cargando sus mesas…</p>
+    <img src="assets/svg/estado-vacio.svg" alt="Cargando mesas" />
+    <ion-spinner name="crescent" /> <p>Cargando sus mesas…</p>
   </div>
   } @case ('error') { @if (store.vista(); as v) { @if (v.estado === 'error') {
-  <ion-text color="danger" role="alert"><p>{{ v.mensaje }}</p></ion-text>
+  <div class="estado" role="alert">
+    <img src="assets/svg/estado-error.svg" alt="Error de estado" />
+    <ion-text color="danger"><p>{{ v.mensaje }}</p></ion-text>
+  </div>
   } } } @case ('listo') { @if (store.vista(); as v) { @if (v.estado === 'listo') { @if (v.mesas.length === 0) {
   <div class="estado vacio" role="status">
+    <img src="assets/svg/estado-vacio.svg" alt="Sin mesas asignadas" />
     <p>Todavía no tiene mesas asignadas. Su coordinador de recinto debe asignarle una JRV.</p>
   </div>
   } @for (m of v.mesas; track m.jrv.id) {
