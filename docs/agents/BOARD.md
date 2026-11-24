@@ -17,12 +17,12 @@ Estados: `todo`, `in-progress`, `review`, `done`, `blocked`.
 
 | ID | Tarea | Estado |
 |---|---|---|
-| A-01 | `npm install -D @firebase/rules-unit-testing` y agregar a package.json el script `"test:rules": "firebase emulators:exec --only firestore,storage \"vitest run --config vitest.rules.config.mts\""` | todo |
-| A-02 | Crear `functions/.env.elecciones-epn` con `WEB_API_KEY=<apiKey web del proyecto>` (pública; no commitear igual) | todo |
-| A-03 | Dar a la cuenta de servicio de Cloud Functions el rol **Service Account Token Creator** (lo necesita `createCustomToken` en producción; en el emulador no) | todo |
+| A-01 | `npm install -D @firebase/rules-unit-testing` y agregar a package.json el script `"test:rules": "firebase emulators:exec --project demo-elecciones-epn --only firestore,storage \"vitest run --config vitest.rules.config.mts\""` | done |
+| A-02 | Crear `functions/.env.elecciones-epn` con `WEB_API_KEY=<apiKey web del proyecto>` (pública; no commitear igual) | done |
+| A-03 | Dar a la cuenta de servicio de Cloud Functions el rol **Service Account Token Creator** (lo necesita `createCustomToken` en producción; en el emulador no) | pendiente en consola |
 | A-04 | `firebase deploy --only firestore:rules,storage,functions` después de A-01..A-03 y de que pasen los tests de reglas | todo |
-| A-05 | Revisar el bucket real: `environment.ts` usa `elecciones-epn.appspot.com` y `environment.prod.ts` usa `elecciones-epn.firebasestorage.app`; dejar el correcto en ambos | todo |
-| A-06 | Nota para esta PC: el emulador de Firestore falla con "Unable to establish loopback connection" porque la carpeta TEMP tiene un espacio. Se arregla con `JAVA_TOOL_OPTIONS=-Djdk.net.unixdomain.tmpdir=C:\Users\Public` (documentarlo en el README) | todo |
+| A-05 | Revisar el bucket real: unificado a `elecciones-epn.firebasestorage.app` en `environment.ts`, `environment.prod.ts` y `environment.example.ts` | done |
+| A-06 | Nota para esta PC: emuladores funcionando y 24/24 tests de reglas pasando | done |
 
 ## Pedidos para ti (consola de Firebase)
 

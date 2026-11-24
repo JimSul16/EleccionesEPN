@@ -1,0 +1,7 @@
+// T-009 — Login por cédula (solo presentación).
+@use "../auth-shared.scss";
+
+// La nota de primera vez queda pegada al enlace de recuperación.
+.auth-form .auth-link + .auth-note {
+  margin-top: var(--app-space-1);
+}

@@ -1,0 +1,7 @@
+// T-009 — Recuperación de contraseña (solo presentación).
+@use "../auth-shared.scss";
+
+// Tras el mensaje de éxito, la acción principal va pegada al aviso.
+.auth-alert.auth-alert--success + .auth-submit {
+  margin-top: 0;
+}

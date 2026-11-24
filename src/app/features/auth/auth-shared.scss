@@ -1,0 +1,147 @@
+// T-009 — Chrome compartido de las pantallas de acceso (ADR-011).
+// Se carga desde src/theme/variables.scss: las páginas no declaran styleUrl
+// (los .page.ts son de Claude), así que los estilos van en modo global con
+// selectores .auth-*; siguen funcionando si más tarde se añade styleUrl.
+
+.auth-content {
+  --background: var(--app-canvas);
+}
+
+// Top-nav al estilo Carbon: canvas, hairline de 1px, sin sombras.
+.auth-header {
+  border-bottom: 1px solid var(--app-hairline);
+}
+
+.auth-header ion-toolbar {
+  --background: var(--app-canvas);
+  --color: var(--app-ink);
+  min-height: var(--app-tap-comfort);
+}
+
+.auth-header ion-title {
+  color: var(--app-ink);
+  font-size: var(--app-text-sm);
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+// Columna única, alineada y con el ritmo de espaciado de 4px.
+.auth-shell {
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+  padding: var(--app-space-6) var(--app-space-4) var(--app-space-7);
+}
+
+.auth-hero {
+  margin-bottom: var(--app-space-5);
+}
+
+// Titular con el tratamiento display de Carbon: peso 300 y máximo 32px.
+.auth-title {
+  margin: 0;
+  color: var(--app-ink);
+  font-size: var(--app-text-headline);
+  font-weight: 300;
+  line-height: 1.25;
+  letter-spacing: 0;
+}
+
+.auth-lead {
+  margin: var(--app-space-3) 0 0;
+  color: var(--app-ink-muted);
+  font-size: var(--app-text-lg);
+  line-height: 1.5;
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+}
+
+// Inputs al estilo Carbon: superficie-1, hairline de 1px, radio 0 y foco
+// con borde de 2px en el azul primario (DESIGN.md text-input).
+.auth-form ion-input {
+  --background: var(--app-surface-1);
+  --color: var(--app-ink);
+  --border-color: var(--app-hairline);
+  --border-style: solid;
+  --border-width: 1px;
+  --border-radius: var(--app-radius-none);
+  --highlight-height: 2px;
+  --highlight-color-focused: var(--ion-color-primary);
+  --highlight-color-valid: var(--ion-color-primary);
+  --highlight-color-invalid: var(--ion-color-danger);
+  --placeholder-color: var(--app-ink-subtle);
+  --ion-color-step-600: var(--app-ink-muted);
+  --ion-color-step-700: var(--app-ink-muted);
+  --padding-top: var(--app-space-3);
+  --padding-bottom: var(--app-space-3);
+  margin-bottom: var(--app-space-4);
+  min-height: var(--app-tap-comfort);
+}
+
+// Botón primario: cuadrado, 48px de alto, tipografía de botón de Carbon.
+.auth-submit {
+  --border-radius: var(--app-radius-none);
+  --box-shadow: none;
+  min-height: var(--app-tap-comfort);
+  margin-top: var(--app-space-1);
+  font-size: var(--app-text-xs);
+  font-weight: 400;
+  letter-spacing: var(--app-tracking);
+}
+
+// Enlace fantasma (ghost): texto en el token de enlace (azul en claro,
+// blue-40 en oscuro) y área táctil de 44px.
+.auth-link {
+  --color: var(--app-link);
+  --background-activated: var(--app-surface-1);
+  --border-radius: var(--app-radius-none);
+  min-height: var(--app-tap-min);
+  margin-top: var(--app-space-2);
+  font-size: var(--app-text-xs);
+  font-weight: 400;
+  letter-spacing: var(--app-tracking);
+}
+
+// Anillo de foco de Carbon: 2px de azul primario.
+.auth-link:focus-visible {
+  outline: 2px solid var(--ion-color-primary);
+  outline-offset: 2px;
+}
+
+// Avisos de error y éxito: superficie-1 con barra de color de 4px y texto
+// en tinta (color + texto, nunca solo color — PLAN 3.2).
+.auth-alert {
+  display: block;
+  margin: 0 0 var(--app-space-4);
+  padding: var(--app-space-3) var(--app-space-4);
+  background: var(--app-surface-1);
+  border-inline-start: 4px solid var(--app-hairline-strong);
+  color: var(--app-ink);
+  font-size: var(--app-text-xs);
+  line-height: 1.5;
+  letter-spacing: var(--app-tracking);
+}
+
+.auth-alert p {
+  margin: 0;
+}
+
+.auth-alert.auth-alert--danger {
+  border-inline-start-color: var(--ion-color-danger);
+}
+
+.auth-alert.auth-alert--success {
+  border-inline-start-color: var(--ion-color-success);
+}
+
+.auth-note {
+  display: block;
+  margin-top: var(--app-space-3);
+  color: var(--app-ink-muted);
+  font-size: var(--app-text-xs);
+  line-height: 1.5;
+  letter-spacing: var(--app-tracking);
+}

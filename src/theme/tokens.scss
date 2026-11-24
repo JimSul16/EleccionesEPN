@@ -1,0 +1,65 @@
+// T-004 — Tokens de diseño (PLAN-AGENTES.md 3.2 · ADR-011, ADR-012, ADR-013).
+//
+// src/theme/ es el único lugar del proyecto con colores en hex (ADR-013).
+// Los tokens de modo oscuro viven al final de variables.scss, después de los
+// :root claros, para ganar en cascada a dark.system.css de Ionic.
+//
+// Tipografía: IBM Plex vía @fontsource (ADR-012), solo pesos 300/400/600 y
+// subset latin, empaquetados en el APK (funcionan sin red, R10).
+@import "@fontsource/ibm-plex-sans/latin-300.css";
+@import "@fontsource/ibm-plex-sans/latin-400.css";
+@import "@fontsource/ibm-plex-sans/latin-600.css";
+@import "@fontsource/ibm-plex-mono/latin-400.css";
+@import "@fontsource/ibm-plex-mono/latin-600.css";
+
+:root {
+  // --- Tipografía (DESIGN.md · ADR-012) ---
+  --app-font-sans: "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif;
+  --app-font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  // Escala móvil (ADR-011): base 16px, nada esencial bajo 14px,
+  // máximo 32px (los displays de 60-76px de Carbon no se usan).
+  --app-text-xs: 14px;
+  --app-text-sm: 16px;
+  --app-text-lg: 18px;
+  --app-text-title: 24px;
+  --app-text-headline: 32px;
+  --app-tracking: 0.16px; // detalle de precisión de Carbon
+
+  // --- Color: tinta y superficies (DESIGN.md) ---
+  --app-ink: #161616;
+  --app-ink-muted: #525252;
+  --app-ink-subtle: #8c8c8c; // solo texto no esencial (ADR-011)
+  // Enlace/acción sobre fondo claro: blue-50, 4.6:1 sobre blanco (AA).
+  --app-link: #0f62fe;
+  --app-canvas: #ffffff;
+  --app-surface-1: #f4f4f4;
+  --app-surface-2: #e0e0e0;
+  --app-hairline: #e0e0e0;
+  --app-hairline-strong: #161616; // borde inferior de input enfocado
+
+  // --- Espaciado: base 4px (PLAN 3.2) ---
+  --app-space-1: 4px;
+  --app-space-2: 8px;
+  --app-space-3: 12px;
+  --app-space-4: 16px;
+  --app-space-5: 24px;
+  --app-space-6: 32px;
+  --app-space-7: 48px;
+
+  // --- Radios 0-4px (ADR-011: Carbon es plano y cuadrado) ---
+  --app-radius-none: 0px;
+  --app-radius-xs: 2px;
+  --app-radius: 4px;
+
+  // --- Áreas táctiles (ADR-011): mínimo 44px, botones 48px ---
+  --app-tap-min: 44px;
+  --app-tap-comfort: 48px;
+}
+
+// Números (votos y totales) en IBM Plex Mono con cifras tabulares.
+.tabular {
+  font-family: var(--app-font-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+}

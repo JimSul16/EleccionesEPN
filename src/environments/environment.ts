@@ -5,7 +5,7 @@ export const environment = {
     apiKey: 'demo-api-key',
     authDomain: 'elecciones-epn.firebaseapp.com',
     projectId: 'elecciones-epn',
-    storageBucket: 'elecciones-epn.appspot.com',
+    storageBucket: 'elecciones-epn.firebasestorage.app',
     messagingSenderId: '1234567890',
     appId: '1:1234567890:web:abcdef123456'
   },
