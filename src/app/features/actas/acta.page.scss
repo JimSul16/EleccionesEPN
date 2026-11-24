@@ -1,0 +1,111 @@
+// T-010a — Acta: formulario y cuadre
+// Números en Plex Mono (.tabular), alineados
+// El cuadre ("Los totales cuadran" / "Faltan N" / "Sobran N") muy visible
+// Secciones de foto y de GPS claras, con la vista previa de la foto bien proporcionada
+// Botón Guardar grande; estados guardado / pendiente / error evidentes
+// Tarjetas de "Mis mesas" con el estado de cada acta legible de un vistazo
+@use "./acta.page.html";
+
+.acta-form {
+  --ion-item-padding: var(--app-space-3) var(--app-space-4);
+}
+
+/* Números tabular - ya definido en tokens.scss, pero aseguramos aquí */
+.tabular {
+  font-family: var(--app-font-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+  color: var(--app-ink);
+}
+
+/* Cuadro de cuadre - hacer muy visible */
+.cuadre {
+  margin-top: var(--app-space-4);
+  padding: var(--app-space-4);
+  background: var(--app-surface-1);
+  border: var(--app-hairline) solid var(--app-ink-subtle);
+  font-size: var(--app-text-lg);
+  font-weight: 600;
+  font-family: var(--app-font-mono);
+}
+
+.cuadre span {
+  display: inline-block;
+  min-width: 40%;
+}
+
+.cuadre strong {
+  color: var(--ion-color-primary);
+}
+
+/* Estados de guardado */
+.guardado-exitoso {
+  margin-top: var(--app-space-3);
+  padding: var(--app-space-3);
+  background: var(--ion-color-success);
+  color: var(--ion-color-success-contrast);
+  border-radius: var(--app-radius-none);
+  font-size: var(--app-text-sm);
+}
+
+.guardando-pendiente {
+  margin-top: var(--app-space-3);
+  padding: var(--app-space-3);
+  background: var(--ion-color-warning);
+  color: var(--ion-color-warning-contrast);
+  border-radius: var(--app-radius-none);
+  font-size: var(--app-text-sm);
+}
+
+.error-guardado {
+  margin-top: var(--app-space-3);
+  padding: var(--app-space-3);
+  background: var(--ion-color-danger);
+  color: var(--ion-color-danger-contrast);
+  border-radius: var(--app-radius-none);
+  font-size: var(--app-text-sm);
+}
+
+/* Sección de foto - vista previa bien proporcionada */
+.evidencia .foto-preview {
+  margin-top: var(--app-space-3);
+  text-align: center;
+}
+
+.evidencia img {
+  max-width: 100%;
+  max-height: 200px;
+  object-fit: contain;
+  background: var(--app-canvas);
+  border: var(--app-hairline) solid var(app-ink-subtle);
+  padding: var(--app-space-2);
+}
+
+.evidencia ion-note {
+  margin-top: var(--app-space-2);
+  font-size: var(--app-text-xs);
+}
+
+/* Sección GPS */
+.evidencia .ubicacion {
+  margin-top: var(--app-space-3);
+  font-size: var(--app-text-sm);
+  color: var(--app-ink-muted);
+}
+
+.evidencia .tabular {
+  color: var(--app-ink);
+  margin-top: var(--app-space-1);
+}
+
+/* Botón Guardar grande */
+.guardar-grande {
+  margin-top: var(--app-space-4);
+  padding: var(--app-space-4) var(--app-space-6);
+  font-size: var(--app-text-lg);
+  font-weight: 600;
+}
+
+/ion-toolbar .guardar-grande {
+  justify-self: end;
+}

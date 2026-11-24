@@ -1,0 +1,53 @@
+// T-010c — Provincial: dashboard
+// Mantener .grafico con altura fija; estilizar .tabla-resultados
+// Gráfico con color neutro, sin colores de partidos
+@use "./dashboard.page.html";
+
+.dashboard .grafico {
+  --canvas-height: 200px;
+  height: var(--canvas-height) !important;
+  /* Gráfico con solo un color neutro */
+  .chart-neutral {
+    fill: var(--app-ink-muted);
+    stroke: var(--app-ink-subtle);
+  }
+}
+
+/* Tabla de resultados - números a la derecha, en .tabular */
+.tabla-resultados {
+  width: 100%;
+  margin-top: var(--app-space-3);
+}
+
+.tabla-resultados caption {
+  margin-bottom: var(--app-space-3);
+  font-size: var(--app-text-sm);
+  color: var(--app-ink-muted);
+  font-weight: 600;
+}
+
+.tabla-resultados th,
+.tabla-resultados td {
+  padding: var(--app-space-2) var(--app-space-3);
+  vertical-align: middle;
+}
+
+.tabla-resultados .tabular {
+  font-size: var(--app-text-sm);
+  color: var(--app-ink);
+  text-align: right;
+}
+
+//* Cabeceras de tabla */
+.tabla-resultados th {
+  color: var(--app-ink-muted);
+  font-size: var(--app-text-xs);
+  text-transform: uppercase;
+  letter-spacing: var(--app-tracking);
+  padding-right: var(--app-space-3);
+}
+
+/* Filas alternas */
+.tabla-resultados tr:nth-child(odd) {
+  background: var(--app-surface-2);
+}

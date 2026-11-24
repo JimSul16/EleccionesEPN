@@ -1,0 +1,33 @@
+// T-010c — Provincial: nuevo recinto
+@use "./nuevo-recinto.page.html";
+
+.nuevo-recinto {
+  --ion-item-padding: var(--app-space-3) var(--app-space-4);
+}
+
+/* Espacio para errores de ion-input - T-011 */
+.nuevo-recinto ion-input {
+  margin-bottom: var(--app-space-4);
+}
+
+/ /* Coordenadas estilo tabular */
+.nuevo-recinto .tabular {
+  color: var(--app-ink);
+  font-size: var(--app-text-sm);
+  font-family: var(--app-font-mono);
+}
+
+/* Fieldset */
+.nuevo-recinto fieldset {
+  margin-top: var(--app-space-4);
+  padding-top: var(--app-space-3);
+  border: var(--app-hairline) solid var(--app-ink-subtle);
+}
+
+/* Botón submit */
+.nuevo-recinto ion-button[type="submit"] {
+  margin-top: var(--app-space-4);
+  padding: var(--app-space-4) var(--app-space-6);
+  font-size: var(--app-text-lg);
+  font-weight: 600;
+}

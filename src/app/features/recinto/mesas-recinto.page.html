@@ -25,7 +25,10 @@
   } @else if (v.estado === 'error') {
   <ion-text color="danger" role="alert"><p>{{ v.mensaje }}</p></ion-text>
   } @else { @if (v.veedores.length === 0) {
-  <p class="estado vacio">Aún no hay veedores en este recinto. Cree uno para poder asignar mesas.</p>
+  <div class="estado vacio" role="status">
+    <img src="assets/svg/estado-vacio.svg" alt="Sin veedores" />
+    Aún no hay veedores en este recinto. Cree uno para poder asignar mesas.
+  </div>
   } @for (fila of v.filas; track fila.jrv.id) {
   <ion-card>
     <ion-card-header>

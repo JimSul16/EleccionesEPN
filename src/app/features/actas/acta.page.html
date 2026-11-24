@@ -13,8 +13,8 @@
 <ion-content class="ion-padding">
   @switch (store.carga()) { @case ('cargando') {
   <div class="estado" role="status">
-    <ion-spinner name="crescent" />
-    <p>Cargando acta…</p>
+    <img src="assets/svg/estado-vacio.svg" alt="Cargando acta" />
+    <ion-spinner name="crescent" /> <p>Cargando acta…</p>
   </div>
   } @case ('error') {
   <div class="estado" role="alert">
