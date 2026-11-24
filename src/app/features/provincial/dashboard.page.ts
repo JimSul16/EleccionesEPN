@@ -1,5 +1,5 @@
 import { Component, effect, inject, signal, untracked, viewChild } from '@angular/core';
-import type { OnDestroy , ElementRef} from '@angular/core';
+import type { OnDestroy, ElementRef } from '@angular/core';
 import {
   IonBackButton,
   IonButtons,
