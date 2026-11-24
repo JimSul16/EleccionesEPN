@@ -1,0 +1,7 @@
+{
+  "name": "EleccionesEPN",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "angular-standalone"
+}
