@@ -13,7 +13,18 @@ import {
   initializeTestEnvironment,
   type RulesTestEnvironment,
 } from '@firebase/rules-unit-testing';
-import { collection, doc, getDoc, getDocs, query, serverTimestamp, setDoc, updateDoc, where } from 'firebase/firestore';
+import {
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  query,
+  serverTimestamp,
+  setDoc,
+  updateDoc,
+  where,
+  writeBatch,
+} from 'firebase/firestore';
 import { ref, uploadBytes } from 'firebase/storage';
 import { afterAll, beforeAll, beforeEach, describe, it } from 'vitest';
 
@@ -91,6 +102,19 @@ describe('Veedor: aislamiento de mesas (R8)', () => {
 
   it('NO lee el acta de una mesa ajena', async () => {
     await assertFails(getDoc(doc(veedorA().firestore(), 'actas/r1_2_ALCALDE')));
+  });
+
+  it('consulta un acta todavía no registrada de su mesa (no existe)', async () => {
+    await assertSucceeds(getDoc(doc(veedorA().firestore(), 'actas/r1_1_PREFECTO')));
+  });
+
+  it('NO consulta un acta no registrada de una mesa ajena', async () => {
+    await assertFails(getDoc(doc(veedorA().firestore(), 'actas/r1_2_PREFECTO')));
+  });
+
+  it('el coordinador consulta un acta no registrada de su recinto, pero no de otro', async () => {
+    await assertSucceeds(getDoc(doc(coordR1().firestore(), 'actas/r1_1_PREFECTO')));
+    await assertFails(getDoc(doc(coordR2().firestore(), 'actas/r1_1_PREFECTO')));
   });
 
   it('el dueño sí lee su acta', async () => {
@@ -191,6 +215,38 @@ describe('Coordinador de recinto (R5)', () => {
 
   it('el veedor NO puede reasignarse mesas', async () => {
     await assertFails(updateDoc(doc(veedorA().firestore(), 'jrv/r1_2'), { veedorId: 'vA' }));
+  });
+});
+
+describe('Provincial: recintos (R4)', () => {
+  function loteRecinto(db: ReturnType<ReturnType<typeof provincial>['firestore']>, id: string, numJrv: number) {
+    const lote = writeBatch(db);
+    lote.set(doc(db, `recintos/${id}`), {
+      provincia: 'Pichincha',
+      canton: 'Quito',
+      parroquia: 'Iñaquito',
+      nombre: 'Nuevo',
+      numJrv,
+      lat: null,
+      lng: null,
+      coordinadorId: null,
+    });
+    for (let n = 1; n <= numJrv; n++) lote.set(doc(db, `jrv/${id}_${n}`), { recintoId: id, numero: n, veedorId: null });
+    return lote.commit();
+  }
+
+  it('crea un recinto con sus JRV en un solo lote', async () => {
+    await assertSucceeds(loteRecinto(provincial().firestore(), 'r9', 3));
+  });
+
+  it('un coordinador de recinto NO crea recintos', async () => {
+    await assertFails(loteRecinto(coordR1().firestore(), 'r9', 2));
+  });
+
+  it('no se crean JRV sueltas de un recinto inexistente', async () => {
+    await assertFails(
+      setDoc(doc(provincial().firestore(), 'jrv/rx_1'), { recintoId: 'rx', numero: 1, veedorId: null }),
+    );
   });
 });
 

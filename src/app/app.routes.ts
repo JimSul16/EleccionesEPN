@@ -38,8 +38,13 @@ export const routes: Routes = [
   {
     path: 'veedor',
     canActivate: [authGuard, primerAccesoGuard, rolGuard('VEEDOR')],
-    loadComponent: inicioRol,
-    data: { titulo: 'Mis mesas' },
+    loadComponent: () => import('./features/veedor/mis-mesas.page').then((m) => m.MisMesasPage),
+  },
+  {
+    // Registro (veedor) y corrección (veedor y coordinador de recinto) de un acta.
+    path: 'acta/:jrvId/:dignidad',
+    canActivate: [authGuard, primerAccesoGuard, rolGuard('VEEDOR', 'RECINTO')],
+    loadComponent: () => import('./features/actas/acta.page').then((m) => m.ActaPage),
   },
   { path: '', redirectTo: 'login', pathMatch: 'full' },
   { path: '**', redirectTo: 'login' },

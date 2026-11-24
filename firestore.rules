@@ -65,6 +65,13 @@ service cloud.firestore {
     }
 
     // Veedor asignado a la mesa, o coordinador del recinto de la mesa.
+    // ID de acta: {recintoId}_{numero}_{dignidad}. Los IDs de recinto son
+    // alfanuméricos (sin '_'), así que la mesa son las dos primeras partes.
+    function mesaDeActa(actaId) {
+      let partes = actaId.split('_');
+      return jrv(partes[0] + '_' + partes[1]);
+    }
+
     function puedeEscribirActa(jrvId) {
       let mesa = jrv(jrvId);
       return (esVeedor() && mesa.veedorId == uid())
@@ -118,7 +125,8 @@ service cloud.firestore {
         && request.resource.data.numero is int && request.resource.data.numero > 0
         && jrvId == request.resource.data.recintoId + '_' + string(request.resource.data.numero)
         && request.resource.data.veedorId == null
-        && exists(/databases/$(database)/documents/recintos/$(request.resource.data.recintoId));
+        // existsAfter: el recinto y sus JRV se crean en el mismo lote atómico.
+        && existsAfter(/databases/$(database)/documents/recintos/$(request.resource.data.recintoId));
 
       // Asignar o reasignar veedor: solo el coordinador del recinto, solo ese campo,
       // y el veedor tiene que ser de su mismo recinto.
@@ -134,10 +142,12 @@ service cloud.firestore {
 
     // ---------- Actas (R5, R6, R7) ----------
     match /actas/{actaId} {
-      // El veedor lee sus actas por ID ({jrvId}_{dignidad}).
+      // Lectura por ID ({jrvId}_{dignidad}). La mesa se obtiene del ID y no de
+      // resource.data: así también se puede consultar un acta que todavía no existe
+      // (el caso normal de una mesa sin registrar), donde resource es null.
       allow get: if esProvincial()
-        || (esRecinto() && resource.data.recintoId == miRecinto())
-        || (esVeedor() && jrv(resource.data.jrvId).veedorId == uid());
+        || (esRecinto() && mesaDeActa(actaId).recintoId == miRecinto())
+        || (esVeedor() && mesaDeActa(actaId).veedorId == uid());
       allow list: if esProvincial() || (esRecinto() && resource.data.recintoId == miRecinto());
 
       allow create: if puedeEscribirActa(request.resource.data.jrvId)

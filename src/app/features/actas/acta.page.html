@@ -1,0 +1,183 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/" text="" />
+    </ion-buttons>
+    <ion-title>
+      {{ store.esCorreccion() ? 'Corregir' : 'Registrar' }} acta de {{ dignidad() === 'ALCALDE' ? 'alcaldía' :
+      'prefectura' }}
+    </ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  @switch (store.carga()) { @case ('cargando') {
+  <div class="estado" role="status">
+    <ion-spinner name="crescent" />
+    <p>Cargando acta…</p>
+  </div>
+  } @case ('error') {
+  <div class="estado" role="alert">
+    <ion-text color="danger">
+      <p>{{ store.errorCarga() }}</p>
+    </ion-text>
+    <ion-button (click)="ngOnInit()">Reintentar</ion-button>
+  </div>
+  } @case ('listo') {
+  <p class="mesa">Mesa {{ store.jrv()?.numero }} · versión {{ (store.anterior()?.version ?? 0) + 1 }}</p>
+
+  <form [formGroup]="form" (ngSubmit)="guardar()" novalidate>
+    <ion-list>
+      <ion-list-header>
+        <ion-label>Votos por organización</ion-label>
+      </ion-list-header>
+      @for (fila of store.filas(); track fila.organizacion.id) {
+      <ion-item>
+        <ion-input
+          [formControlName]="fila.organizacion.id"
+          type="number"
+          inputmode="numeric"
+          min="0"
+          class="tabular"
+          labelPlacement="stacked"
+          [label]="'Lista ' + fila.organizacion.lista + ' · ' + fila.organizacion.siglas + (fila.candidato ? ' · ' + fila.candidato.nombre : '')"
+          [errorText]="mostrarError(fila.organizacion.id) ?? ''"
+          [class.ion-invalid]="!!mostrarError(fila.organizacion.id)"
+          [class.ion-touched]="!!mostrarError(fila.organizacion.id)"
+        />
+      </ion-item>
+      }
+
+      <ion-list-header>
+        <ion-label>Otros</ion-label>
+      </ion-list-header>
+      <ion-item>
+        <ion-input
+          formControlName="nulos"
+          type="number"
+          inputmode="numeric"
+          min="0"
+          class="tabular"
+          label="Votos nulos"
+          labelPlacement="stacked"
+          [errorText]="mostrarError('nulos') ?? ''"
+          [class.ion-invalid]="!!mostrarError('nulos')"
+          [class.ion-touched]="!!mostrarError('nulos')"
+        />
+      </ion-item>
+      <ion-item>
+        <ion-input
+          formControlName="blancos"
+          type="number"
+          inputmode="numeric"
+          min="0"
+          class="tabular"
+          label="Votos blancos"
+          labelPlacement="stacked"
+          [errorText]="mostrarError('blancos') ?? ''"
+          [class.ion-invalid]="!!mostrarError('blancos')"
+          [class.ion-touched]="!!mostrarError('blancos')"
+        />
+      </ion-item>
+      <ion-item>
+        <ion-input
+          formControlName="totalSufragantes"
+          type="number"
+          inputmode="numeric"
+          min="0"
+          class="tabular"
+          label="Total de sufragantes"
+          labelPlacement="stacked"
+          [errorText]="mostrarError('totalSufragantes') ?? ''"
+          [class.ion-invalid]="!!mostrarError('totalSufragantes')"
+          [class.ion-touched]="!!mostrarError('totalSufragantes')"
+        />
+      </ion-item>
+    </ion-list>
+
+    <div class="cuadre" aria-live="polite">
+      <span>Suma: <strong class="tabular">{{ validacion().sumaCalculada }}</strong></span>
+      @if (validacion().valida) {
+      <ion-text color="success"><strong>Los totales cuadran</strong></ion-text>
+      } @else if (validacion().diferencia > 0) {
+      <ion-text color="warning"><strong>Faltan {{ validacion().diferencia }}</strong></ion-text>
+      } @else if (validacion().diferencia < 0) {
+      <ion-text color="danger"><strong>Sobran {{ -validacion().diferencia }}</strong></ion-text>
+      }
+    </div>
+
+    <section class="evidencia" aria-label="Fotografía del acta">
+      <h2>Fotografía del acta</h2>
+      @if (store.foto(); as foto) {
+      <img [src]="foto.vistaPrevia" alt="Vista previa de la foto del acta" />
+      <ion-note [color]="foto.nitida ? 'success' : 'danger'">
+        Nitidez {{ foto.puntajeNitidez }} · {{ foto.nitida ? 'aceptada' : 'rechazada' }}
+      </ion-note>
+      } @else if (store.urlFotoAnterior()) {
+      <img [src]="store.urlFotoAnterior()" alt="Foto registrada del acta" />
+      } @else if (store.anterior()?.fotoPath) {
+      <ion-note>Foto registrada (pendiente de sincronizar o sin vista previa).</ion-note>
+      } @if (store.errorFoto()) {
+      <ion-text color="danger" role="alert"><p>{{ store.errorFoto() }}</p></ion-text>
+      }
+      <ion-button
+        type="button"
+        fill="outline"
+        expand="block"
+        [disabled]="store.tomandoFoto()"
+        (click)="store.tomarFoto()"
+      >
+        @if (store.tomandoFoto()) {
+        <ion-spinner name="crescent" aria-label="Abriendo cámara" />
+        } @else { {{ store.foto() || store.anterior()?.fotoPath ? 'Repetir foto' : 'Tomar foto' }} }
+      </ion-button>
+    </section>
+
+    <section class="evidencia" aria-label="Ubicación GPS">
+      <h2>Ubicación</h2>
+      @if (store.ubicacion(); as u) {
+      <p class="tabular">{{ u.lat.toFixed(6) }}, {{ u.lng.toFixed(6) }} · precisión {{ u.precisionM }} m</p>
+      } @if (store.errorUbicacion()) {
+      <ion-text color="danger" role="alert"><p>{{ store.errorUbicacion() }}</p></ion-text>
+      }
+      <ion-button
+        type="button"
+        fill="outline"
+        expand="block"
+        [disabled]="store.obteniendoUbicacion()"
+        (click)="store.obtenerUbicacion()"
+      >
+        @if (store.obteniendoUbicacion()) {
+        <ion-spinner name="crescent" aria-label="Obteniendo ubicación" />
+        } @else { {{ store.ubicacion() ? 'Actualizar ubicación' : 'Obtener ubicación' }} }
+      </ion-button>
+    </section>
+
+    @if (store.faltantes().length > 0 && store.guardado() === 'inactivo') {
+    <ul class="faltantes">
+      @for (f of store.faltantes(); track f) {
+      <li>{{ f }}</li>
+      }
+    </ul>
+    } @switch (store.guardado()) { @case ('guardado') {
+    <ion-text color="success" role="status"
+      ><p><strong>Acta guardada y sincronizada.</strong></p></ion-text
+    >
+    <ion-button type="button" expand="block" (click)="volver()">Volver</ion-button>
+    } @case ('pendiente') {
+    <ion-text color="warning" role="status">
+      <p><strong>Guardada en el teléfono.</strong> Se enviará automáticamente al recuperar la conexión.</p>
+    </ion-text>
+    <ion-button type="button" expand="block" (click)="volver()">Volver</ion-button>
+    } @default { @if (store.errorGuardado()) {
+    <ion-text color="danger" role="alert"><p>{{ store.errorGuardado() }}</p></ion-text>
+    }
+    <ion-button type="submit" expand="block" [disabled]="!puedeGuardar()">
+      @if (store.guardado() === 'guardando') {
+      <ion-spinner name="crescent" aria-label="Guardando" />
+      } @else { {{ store.esCorreccion() ? 'Guardar corrección' : 'Guardar acta' }} }
+    </ion-button>
+    } }
+  </form>
+  } }
+</ion-content>

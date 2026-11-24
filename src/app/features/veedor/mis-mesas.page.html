@@ -1,0 +1,46 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-title>Mis mesas</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="salir()">Salir</ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <app-estado-red />
+  <p>Veedor: {{ auth.usuario()?.nombres }} {{ auth.usuario()?.apellidos }}</p>
+
+  @switch (store.vista().estado) { @case ('cargando') {
+  <div class="estado" role="status">
+    <ion-spinner name="crescent" />
+    <p>Cargando sus mesas…</p>
+  </div>
+  } @case ('error') { @if (store.vista(); as v) { @if (v.estado === 'error') {
+  <ion-text color="danger" role="alert"><p>{{ v.mensaje }}</p></ion-text>
+  } } } @case ('listo') { @if (store.vista(); as v) { @if (v.estado === 'listo') { @if (v.mesas.length === 0) {
+  <div class="estado vacio" role="status">
+    <p>Todavía no tiene mesas asignadas. Su coordinador de recinto debe asignarle una JRV.</p>
+  </div>
+  } @for (m of v.mesas; track m.jrv.id) {
+  <ion-card>
+    <ion-card-header>
+      <ion-card-title>Mesa {{ m.jrv.numero }}</ion-card-title>
+      <ion-text color="medium">{{ m.completas }}/2 actas</ion-text>
+    </ion-card-header>
+    <ion-card-content>
+      @for (d of dignidades; track d) {
+      <ion-button
+        fill="outline"
+        expand="block"
+        [routerLink]="['/acta', m.jrv.id, d]"
+        [attr.aria-label]="nombreDignidad(d) + ': ' + estadoActa(m.actas[d]).texto"
+      >
+        {{ nombreDignidad(d) }}
+        <ion-badge slot="end" [color]="estadoActa(m.actas[d]).color">{{ estadoActa(m.actas[d]).texto }}</ion-badge>
+      </ion-button>
+      }
+    </ion-card-content>
+  </ion-card>
+  } } } } }
+</ion-content>
