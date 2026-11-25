@@ -60,7 +60,7 @@
 flowchart LR
   subgraph App["App Móvil (Ionic 9 + Angular 22 + Capacitor 8)"]
     F["features/<br/>Páginas por rol + Stores (Signals)"]
-    D["domain/<br/>Reglas puras: cédula, acta, nitidez, geo"]
+    D["domain/<br/>Reglas puras: cédula, acta, nitidez, geo, totales"]
     DA["data/<br/>Repositorios, cámara, GPS y red"]
     C["core/<br/>Firebase, AuthService, guards, errores"]
     F --> D
@@ -81,6 +81,7 @@ flowchart LR
 ```
 
 - **Capas desacopladas ([ADR-003](docs/adr/ADR-003-arquitectura-por-capas.md)):** las páginas y stores no importan el SDK de Firebase directamente; delegan en `data/` y `core/`.
+- **Dashboard en tiempo real sin agregaciones de servidor ([ADR-017](docs/adr/ADR-017-graficos-dashboard-chartjs.md)):** el dashboard suma en el cliente (`sumarActas` en `src/app/domain/totales.ts`) las actas que `ProvincialStore` ya escucha en tiempo real, evitando consultas de agregación extra o índices compuestos por cada organización.
 - **Jerarquía sin servidor custom ([ADR-018](docs/adr/ADR-018-firebase-spark-sin-functions.md)):** las cuentas nuevas se crean mediante una instancia secundaria en memoria de Firebase Auth (`crearAuthSecundaria()`), mientras Firestore valida en lote que solo un superior autorizado cree el perfil y su índice en `cedulas/{cédula}`.
 
 ### Estructura del Repositorio
@@ -90,7 +91,7 @@ EleccionesEPN/
 ├── src/
 │   ├── app/
 │   │   ├── core/        # Inicialización Firebase, autenticación, guards y manejo de errores
-│   │   ├── domain/      # Modelos, validador de cédula (módulo 10), reglas de acta, nitidez y geo
+│   │   ├── domain/      # Modelos, validador de cédula (módulo 10), reglas de acta, nitidez, geo y totales
 │   │   ├── data/        # Repositorios Firestore, foto, geolocalización y estado de red
 │   │   └── features/    # Pantallas por rol (auth, provincial, recinto, veedor, actas, usuarios)
 │   ├── assets/          # Recursos gráficos e ilustraciones de estado
@@ -212,7 +213,7 @@ Aplican al entorno de emuladores y al proyecto de demostración sembrado con `se
 
 | Suite | Comando | Cobertura |
 |---|---|---|
-| **Unitarias** | `npm run test:unit` | 41 pruebas (reglas de dominio y guards) |
+| **Unitarias** | `npm run test:unit` | 44 pruebas (reglas de dominio, totales y guards) |
 | **Reglas Firestore** | `npm run test:rules` | 45 pruebas (aislamiento, actas, fotos, alta jerárquica y auditoría) |
 | **Integración Auth + Firestore** | ver abajo | 13 flujos completos contra emuladores |
 | **E2E Móvil (Playwright)** | `npm run test:e2e` | 4 pruebas de humo en perfil Pixel 7 |
