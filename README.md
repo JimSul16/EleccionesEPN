@@ -185,14 +185,21 @@ Levantar la aplicación en navegador:
 npx ng serve
 ```
 
-### 4. Generar APK Android (Debug)
+### 4. Generar APK Android (Debug y Release firmado)
 ```powershell
-npm run build
+npx ng build --configuration production
 npx cap sync android
 cd android
 .\gradlew.bat assembleDebug
+# Para release firmado (pasando keystore y claves por variables de entorno fuera del repo):
+.\gradlew.bat assembleRelease
 ```
-Salida generada: `android\app\build\outputs\apk\debug\app-debug.apk`. El APK de entrega final corresponde a una compilación `release` firmada publicada en GitHub Releases (el keystore no se versiona).
+Salida generada: `android\app\build\outputs\apk\debug\app-debug.apk` (debug) y `android\app\build\outputs\apk\release\app-release.apk` (`7.57 MB`, release firmado con keystore externo publicado en [GitHub Releases v1.0.0](https://github.com/JimSul16/EleccionesEPN/releases/tag/v1.0.0); ni el `.jks` ni las contraseñas se versionan).
+
+#### Evidencia de firma y compilación Release (`v1.0.0`)
+| Generación de keystore externo (`keytool`) | Compilación y firma `assembleRelease` |
+|---|---|
+| ![Creación de keystore fuera del repo](docs/setup/img/firma-release-1.png) | ![Compilación release firmada](docs/setup/img/firma-release-2.jpg) |
 
 ---
 
