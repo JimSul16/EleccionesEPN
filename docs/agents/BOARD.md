@@ -32,8 +32,8 @@ Verificación sobre `main`: lint, 41 unitarias, 4 E2E, 45 de reglas, 13 de integ
 | A-08 (guía) | `docs/setup/PRUEBA-TELEFONO.md` corregida | done |
 | A-04 | Deploy **solo** `firestore:rules,firestore:indexes` (plan gratuito: nada de Functions ni Storage) | done (`Deploy complete!` en `elecciones-epn`) |
 | A-09 | Seed de producción con la clave de servicio fuera del repo | done (6 recintos, 33 JRV, 5 orgs, 10 candidaturas, 4 cuentas + 24 actas demo en `elecciones-epn`) |
-| S-08 | APK debug desde `main` y prueba en el teléfono (llenar PRUEBA-TELEFONO.md y los 6 puntajes de nitidez) | in-progress (APK debug `10.05 MB` compilado; pendiente `adb install` y prueba en teléfono) |
-| A-10 | Subir `main` a https://github.com/JimSul16/EleccionesEPN | in-progress (secretos verificados, remoto vacío; detenido en 6b porque `EleccionesEPN` está en `agent/opencode/T-013`) |
+| S-08 | APK debug desde `main` y prueba en el teléfono (llenar PRUEBA-TELEFONO.md y los 6 puntajes de nitidez) | in-progress (APK debug `10.05 MB` compilado; pendiente registrar resultados OK/FALLA, 6 puntajes de nitidez y capturas) |
+| A-10 | Subir `main` a https://github.com/JimSul16/EleccionesEPN | in-progress (secretos verificados; subiendo `main` al remoto, quedará `done` tras confirmar push) |
 | A-12 | Miércoles: APK release firmado + GitHub Release v1.0.0 | todo |
 
 ## Usuario
