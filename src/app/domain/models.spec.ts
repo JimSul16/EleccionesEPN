@@ -5,7 +5,7 @@ describe('models', () => {
   it('genera ids deterministas', () => {
     expect(jrvId('rec1', 7)).toBe('rec1_7');
     expect(actaId('rec1_7', 'ALCALDE')).toBe('rec1_7_ALCALDE');
-    expect(rutaFotoActa('rec1', 'rec1_7', 'PREFECTO', 'abc')).toBe('actas/rec1/rec1_7/PREFECTO-abc.jpg');
+    expect(rutaFotoActa('rec1_7_PREFECTO', 'abc')).toBe('fotos/rec1_7_PREFECTO_abc');
   });
 
   it('calcula el estado de la mesa', () => {

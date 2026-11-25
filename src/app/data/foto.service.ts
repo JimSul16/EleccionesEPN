@@ -1,15 +1,24 @@
-import { inject, Injectable } from '@angular/core';
+import { Injectable } from '@angular/core';
 import { Camera } from '@capacitor/camera';
-import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
 
-import { FirebaseService } from '../core/firebase';
 import { ANCHO_ANALISIS, evaluarNitidez, UMBRAL_NITIDEZ } from '../domain/nitidez';
 
-/** Lado mayor de la foto que se sube; suficiente para leer el acta, liviana para la red. */
-const LADO_MAXIMO = 1600;
-const CALIDAD_JPEG = 0.7;
+/**
+ * Tope del JPEG en base64. Un documento de Firestore admite 1 MiB y las reglas
+ * exigen menos de 950 000 caracteres: se deja margen.
+ */
+export const MAX_BASE64 = 700_000;
 
-export type ErrorFoto = 'cancelada' | 'permisoDenegado' | 'sinCamara' | 'fallo';
+/** Intentos de compresión, de mejor a peor calidad, hasta entrar en el tope. */
+const INTENTOS: { lado: number; calidad: number }[] = [
+  { lado: 1600, calidad: 0.7 },
+  { lado: 1400, calidad: 0.65 },
+  { lado: 1200, calidad: 0.6 },
+  { lado: 1000, calidad: 0.55 },
+  { lado: 800, calidad: 0.5 },
+];
+
+export type ErrorFoto = 'cancelada' | 'permisoDenegado' | 'sinCamara' | 'muyGrande' | 'fallo';
 
 export class FotoError extends Error {
   constructor(readonly tipo: ErrorFoto) {
@@ -18,9 +27,11 @@ export class FotoError extends Error {
 }
 
 export interface FotoCapturada {
-  /** JPEG comprimido listo para subir. */
-  blob: Blob;
-  /** URL local para la vista previa (revocar al descartar). */
+  /** JPEG en base64 (sin el prefijo data:), listo para guardar en Firestore. */
+  base64: string;
+  /** Tamaño aproximado del JPEG en bytes. */
+  bytes: number;
+  /** data URL para la vista previa. */
   vistaPrevia: string;
   nitida: boolean;
   puntajeNitidez: number;
@@ -34,15 +45,13 @@ const CODIGOS: Record<string, ErrorFoto> = {
 };
 
 /**
- * Captura, compresión, control de nitidez (R7) y subida a Storage.
- * La foto se toma siempre con la cámara (no desde la galería) y se vuelve a
- * codificar como JPEG en un canvas: así el formato y el tamaño están garantizados
- * y coinciden con lo que exige storage.rules.
+ * Captura, control de nitidez (R7) y compresión de la foto del acta.
+ * Plan gratuito Spark (ADR-018): la foto se guarda en Firestore (colección
+ * fotos) y no en Storage. Se toma siempre con la cámara y se recodifica como
+ * JPEG en un canvas, así el formato y el tamaño están garantizados.
  */
 @Injectable({ providedIn: 'root' })
 export class FotoService {
-  private readonly fb = inject(FirebaseService);
-
   /** Pide permiso si hace falta. Devuelve false si el usuario lo niega. */
   async asegurarPermiso(): Promise<boolean> {
     try {
@@ -63,8 +72,8 @@ export class FotoService {
     try {
       const r = await Camera.takePhoto({
         quality: 90,
-        targetWidth: LADO_MAXIMO,
-        targetHeight: LADO_MAXIMO,
+        targetWidth: INTENTOS[0].lado,
+        targetHeight: INTENTOS[0].lado,
         correctOrientation: true,
         saveToGallery: false,
       });
@@ -79,19 +88,16 @@ export class FotoService {
     if (!webPath) throw new FotoError('fallo');
 
     const original = await cargarImagen(webPath);
-    const blob = await comprimir(original);
     const { nitida, puntaje } = medirNitidez(original, umbral);
-    return { blob, vistaPrevia: URL.createObjectURL(blob), nitida, puntajeNitidez: puntaje };
-  }
-
-  /** Sube la foto a su ruta definitiva (ver rutaFotoActa en domain/models.ts). */
-  async subir(ruta: string, blob: Blob): Promise<void> {
-    await uploadBytes(ref(this.fb.storage, ruta), blob, { contentType: 'image/jpeg' });
-  }
-
-  /** URL de descarga para mostrar la foto a quien tenga permiso (reglas de Storage). */
-  url(ruta: string): Promise<string> {
-    return getDownloadURL(ref(this.fb.storage, ruta));
+    const dataUrl = comprimirDentroDelTope(original);
+    const base64 = dataUrl.slice(dataUrl.indexOf(',') + 1);
+    return {
+      base64,
+      bytes: Math.floor((base64.length * 3) / 4),
+      vistaPrevia: dataUrl,
+      nitida,
+      puntajeNitidez: puntaje,
+    };
   }
 }
 
@@ -113,11 +119,13 @@ function dibujar(img: HTMLImageElement, ladoMaximo: number): HTMLCanvasElement {
   return canvas;
 }
 
-function comprimir(img: HTMLImageElement): Promise<Blob> {
-  const canvas = dibujar(img, LADO_MAXIMO);
-  return new Promise((resolve, reject) =>
-    canvas.toBlob((b) => (b ? resolve(b) : reject(new FotoError('fallo'))), 'image/jpeg', CALIDAD_JPEG),
-  );
+/** Prueba resoluciones y calidades decrecientes hasta que el base64 entra en MAX_BASE64. */
+function comprimirDentroDelTope(img: HTMLImageElement): string {
+  for (const { lado, calidad } of INTENTOS) {
+    const dataUrl = dibujar(img, lado).toDataURL('image/jpeg', calidad);
+    if (dataUrl.length - dataUrl.indexOf(',') - 1 <= MAX_BASE64) return dataUrl;
+  }
+  throw new FotoError('muyGrande');
 }
 
 /** Mide sobre una versión reducida: más rápido y el umbral no depende de la resolución de la cámara. */

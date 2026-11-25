@@ -1,44 +1,33 @@
 /**
  * Traduce errores de Firebase a mensajes para el usuario (R9: estados de error
- * explícitos). Los mensajes de las Cloud Functions ya vienen en español y se
- * muestran tal cual.
+ * explícitos). Los errores de la app con un mensaje ya pensado para el usuario
+ * (ErrorParaUsuario) se muestran tal cual.
  */
+
+/** Error cuyo mensaje se muestra tal cual al usuario. */
+export class ErrorParaUsuario extends Error {}
 
 const MENSAJES: Record<string, string> = {
   'permission-denied': 'No tiene permiso para esta acción.',
   'firestore/permission-denied': 'No tiene permiso para esta acción.',
-  'storage/unauthorized': 'No tiene permiso para subir esta foto.',
   unavailable: 'Sin conexión con el servidor. Intente de nuevo.',
   'firestore/unavailable': 'Sin conexión. Los cambios se guardarán al recuperar la red.',
-  'functions/unavailable': 'Sin conexión con el servidor. Intente de nuevo.',
-  'functions/internal': 'Error del servidor. Intente de nuevo.',
-  'functions/deadline-exceeded': 'El servidor tardó demasiado. Intente de nuevo.',
-  'storage/retry-limit-exceeded': 'No se pudo subir la foto. Revise la conexión.',
   'auth/network-request-failed': 'Sin conexión. Revise su red.',
-  'auth/invalid-custom-token': 'La sesión no es válida. Ingrese de nuevo.',
+  'auth/too-many-requests': 'Demasiados intentos. Espere unos minutos e intente de nuevo.',
+  'auth/email-already-in-use': 'Ya existe una cuenta con ese correo.',
+  'auth/invalid-email': 'Correo no válido.',
+  'auth/weak-password': 'La contraseña no cumple los requisitos.',
+  'auth/requires-recent-login': 'Por seguridad, ingrese de nuevo y repita la operación.',
 };
 
 export function mensajeDeError(error: unknown): string {
-  const e = error as { code?: string; message?: string };
-  const codigo = e?.code ?? '';
-  if (
-    codigo.startsWith('functions/') &&
-    !['functions/internal', 'functions/unavailable', 'functions/deadline-exceeded'].includes(codigo) &&
-    e.message
-  ) {
-    return e.message;
-  }
+  if (error instanceof ErrorParaUsuario) return error.message;
+  const codigo = (error as { code?: string })?.code ?? '';
   return MENSAJES[codigo] ?? 'Ocurrió un error inesperado.';
 }
 
 /** true cuando el error es por falta de red: la UI ofrece reintentar en vez de mostrar un fallo. */
 export function esErrorDeRed(error: unknown): boolean {
   const codigo = (error as { code?: string })?.code ?? '';
-  return [
-    'unavailable',
-    'firestore/unavailable',
-    'functions/unavailable',
-    'auth/network-request-failed',
-    'storage/retry-limit-exceeded',
-  ].includes(codigo);
+  return ['unavailable', 'firestore/unavailable', 'auth/network-request-failed'].includes(codigo);
 }

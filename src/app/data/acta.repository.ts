@@ -8,10 +8,9 @@ import {
   onSnapshot,
   query,
   serverTimestamp,
-  setDoc,
   sum,
-  updateDoc,
   where,
+  writeBatch,
   type DocumentSnapshot,
   type Query,
 } from 'firebase/firestore';
@@ -21,6 +20,7 @@ import { FirebaseService } from '../core/firebase';
 import {
   actaId,
   ORGANIZACION_IDS,
+  rutaFotoActa,
   type Acta,
   type ConteoActa,
   type Dignidad,
@@ -32,8 +32,16 @@ export interface DatosActa extends ConteoActa {
   jrvId: string;
   recintoId: string;
   dignidad: Dignidad;
+  /** Foto actual del acta (fotos/{id}), o null. Se reemplaza si se pasa una FotoNueva. */
   fotoPath: string | null;
   ubicacion: Ubicacion | null;
+}
+
+/** Foto nueva tomada para el acta, ya comprimida (ver FotoService). */
+export interface FotoNueva {
+  uuid: string;
+  base64: string;
+  bytes: number;
 }
 
 /**
@@ -112,40 +120,88 @@ export class ActaRepository {
   }
 
   /**
-   * Crea el acta (versión 1) o la corrige (versión + 1). La versión esperada se
-   * comprueba en las reglas: si otro la corrigió antes, la escritura se rechaza.
+   * Crea el acta (versión 1) o la corrige (versión + 1), con su foto nueva (si la
+   * hay) y su registro de auditoría, en un solo lote atómico. Sin red, Firestore
+   * encola el lote completo y lo envía al reconectar (R10). La versión esperada se
+   * comprueba en las reglas: si otro corrigió antes, el lote se rechaza.
    */
-  async guardar(datos: DatosActa, anterior: Acta | null): Promise<ResultadoGuardado> {
+  async guardar(datos: DatosActa, anterior: Acta | null, foto?: FotoNueva): Promise<ResultadoGuardado> {
     const uid = this.fb.auth.currentUser?.uid;
     if (!uid) throw new Error('Sin sesión');
-    const ref = doc(this.fb.db, 'actas', actaId(datos.jrvId, datos.dignidad));
+    const id = actaId(datos.jrvId, datos.dignidad);
+    const ref = doc(this.fb.db, 'actas', id);
+    const version = anterior ? anterior.version + 1 : 1;
+    const fotoPath = foto ? rutaFotoActa(id, foto.uuid) : datos.fotoPath;
+
     const conteo = {
       votos: Object.fromEntries(ORGANIZACION_IDS.map((o) => [o, Number(datos.votos[o])])),
       nulos: Number(datos.nulos),
       blancos: Number(datos.blancos),
       totalSufragantes: Number(datos.totalSufragantes),
-      fotoPath: datos.fotoPath,
+      fotoPath,
       ubicacion: datos.ubicacion,
-      updatedBy: uid,
-      updatedAt: serverTimestamp(),
     };
 
-    const escritura = anterior
-      ? updateDoc(ref, { ...conteo, estado: 'CORREGIDA', version: anterior.version + 1 })
-      : setDoc(ref, {
-          ...conteo,
-          jrvId: datos.jrvId,
-          recintoId: datos.recintoId,
-          dignidad: datos.dignidad,
-          estado: 'REGISTRADA',
-          version: 1,
-          registradoPor: uid,
-          createdAt: serverTimestamp(),
-        });
+    const lote = writeBatch(this.fb.db);
+    if (foto) {
+      lote.set(doc(this.fb.db, fotoPath!), {
+        actaId: id,
+        jrvId: datos.jrvId,
+        recintoId: datos.recintoId,
+        dignidad: datos.dignidad,
+        mime: 'image/jpeg',
+        imagen: foto.base64,
+        bytes: foto.bytes,
+        creadoPor: uid,
+        creadoEn: serverTimestamp(),
+      });
+    }
+    if (anterior) {
+      lote.update(ref, { ...conteo, estado: 'CORREGIDA', version, updatedBy: uid, updatedAt: serverTimestamp() });
+    } else {
+      lote.set(ref, {
+        ...conteo,
+        jrvId: datos.jrvId,
+        recintoId: datos.recintoId,
+        dignidad: datos.dignidad,
+        estado: 'REGISTRADA',
+        version,
+        registradoPor: uid,
+        updatedBy: uid,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      });
+    }
+    // Auditoría (R5, R6): las reglas exigen que vaya en el mismo lote que el acta.
+    lote.set(doc(collection(this.fb.db, 'auditoria')), {
+      actaId: id,
+      recintoId: datos.recintoId,
+      usuario: uid,
+      accion: anterior ? 'CORREGIR' : 'CREAR',
+      version,
+      antes: anterior
+        ? {
+            votos: anterior.votos,
+            nulos: anterior.nulos,
+            blancos: anterior.blancos,
+            totalSufragantes: anterior.totalSufragantes,
+            fotoPath: anterior.fotoPath,
+          }
+        : null,
+      despues: conteo,
+      fecha: serverTimestamp(),
+    });
 
+    const escritura = lote.commit();
     const plazo = new Promise<'pendiente'>((r) => setTimeout(() => r('pendiente'), ESPERA_SERVIDOR_MS));
     const primero = await Promise.race([escritura.then(() => 'ok' as const), plazo]);
     return { sincronizada: primero === 'ok', confirmacion: escritura };
+  }
+
+  /** Imagen de una foto de acta como data URL, o null si no existe o no está disponible. */
+  async imagen(fotoPath: string): Promise<string | null> {
+    const s = await getDoc(doc(this.fb.db, fotoPath));
+    return s.exists() ? `data:${s.get('mime')};base64,${s.get('imagen')}` : null;
   }
 
   /**

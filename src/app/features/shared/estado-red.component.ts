@@ -1,10 +1,9 @@
 import { Component, inject } from '@angular/core';
 import { IonText } from '@ionic/angular';
 
-import { ColaFotosService } from '../../data/cola-fotos.service';
 import { RedService } from '../../data/red.service';
 
-/** Aviso de conexión y de fotos pendientes de sincronizar (R9, R10). */
+/** Aviso de conexión y de sincronización de lo guardado sin red (R9, R10). */
 @Component({
   selector: 'app-estado-red',
   template: `
@@ -20,9 +19,9 @@ import { RedService } from '../../data/red.service';
         />
         <ion-text color="warning">Sin conexión. Lo que registre se guardará y se enviará al reconectar.</ion-text>
       </div>
-    } @else if (cola.pendientes() > 0) {
+    } @else if (red.sincronizando()) {
       <div class="estado-red sincronizando" role="status">
-        <ion-text color="medium">Sincronizando {{ cola.pendientes() }} foto(s)…</ion-text>
+        <ion-text color="medium">Sincronizando actas y fotos guardadas sin conexión…</ion-text>
       </div>
     }
   `,
@@ -30,5 +29,4 @@ import { RedService } from '../../data/red.service';
 })
 export class EstadoRedComponent {
   readonly red = inject(RedService);
-  readonly cola = inject(ColaFotosService);
 }

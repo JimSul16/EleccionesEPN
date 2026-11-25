@@ -3,14 +3,12 @@ import { computed, inject, Injectable, signal } from '@angular/core';
 import { mensajeDeError } from '../../core/errores';
 import { ActaRepository } from '../../data/acta.repository';
 import { CatalogoRepository } from '../../data/catalogo.repository';
-import { ColaFotosService } from '../../data/cola-fotos.service';
 import { FotoError, FotoService, type FotoCapturada } from '../../data/foto.service';
 import { JrvRepository } from '../../data/jrv.repository';
 import { MENSAJES_UBICACION, UbicacionError, UbicacionService } from '../../data/ubicacion.service';
 import { validarActa } from '../../domain/acta.rules';
 import {
   ORGANIZACION_IDS,
-  rutaFotoActa,
   type Acta,
   type Candidato,
   type ConteoActa,
@@ -31,6 +29,7 @@ export type EstadoGuardado = 'inactivo' | 'guardando' | 'guardado' | 'pendiente'
 const MENSAJES_FOTO: Record<string, string> = {
   permisoDenegado: 'Sin permiso de cámara. Actívelo en Ajustes > Aplicaciones > Control electoral > Permisos.',
   sinCamara: 'Este dispositivo no tiene cámara disponible.',
+  muyGrande: 'La foto es demasiado grande. Tómela de nuevo, un poco más lejos.',
   fallo: 'No se pudo tomar la foto. Intente de nuevo.',
 };
 
@@ -50,7 +49,6 @@ export class RegistroActaStore {
   private readonly catalogo = inject(CatalogoRepository);
   private readonly jrvs = inject(JrvRepository);
   private readonly fotoSrv = inject(FotoService);
-  private readonly colaFotos = inject(ColaFotosService);
   private readonly ubicacionSrv = inject(UbicacionService);
 
   readonly carga = signal<EstadoCarga>('cargando');
@@ -94,9 +92,9 @@ export class RegistroActaStore {
         organizaciones.map((o) => ({ organizacion: o, candidato: candidatos.find((c) => c.organizacionId === o.id) })),
       );
       if (anterior?.fotoPath) {
-        this.fotoSrv.url(anterior.fotoPath).then(
+        this.actas.imagen(anterior.fotoPath).then(
           (u) => this.urlFotoAnterior.set(u),
-          () => this.urlFotoAnterior.set(null), // Puede estar aún en la cola offline.
+          () => this.urlFotoAnterior.set(null), // Sin red y sin caché: se muestra el aviso de foto registrada.
         );
       }
       this.carga.set('listo');
@@ -135,8 +133,6 @@ export class RegistroActaStore {
   }
 
   descartarFoto(): void {
-    const f = this.foto();
-    if (f) URL.revokeObjectURL(f.vistaPrevia);
     this.foto.set(null);
   }
 
@@ -168,36 +164,32 @@ export class RegistroActaStore {
     this.guardado.set('guardando');
     this.errorGuardado.set(null);
     try {
-      let fotoPath = this.anterior()?.fotoPath ?? null;
-      let fotoEnCola = false;
+      // La foto nueva (si la hay) viaja en el mismo lote que el acta: con o sin red,
+      // se guardan juntas o no se guarda ninguna.
       const nueva = this.foto();
-      if (nueva) {
-        fotoPath = rutaFotoActa(jrv.recintoId, jrv.id, this.dignidad(), uuid());
-        fotoEnCola = !(await this.colaFotos.subirOEncolar(fotoPath, nueva.blob));
-      }
-
       const r = await this.actas.guardar(
         {
           ...conteo,
           jrvId: jrv.id,
           recintoId: jrv.recintoId,
           dignidad: this.dignidad(),
-          fotoPath,
+          fotoPath: this.anterior()?.fotoPath ?? null,
           ubicacion: this.ubicacion(),
         },
         this.anterior(),
+        nueva ? { uuid: uuid(), base64: nueva.base64, bytes: nueva.bytes } : undefined,
       );
 
-      if (r.sincronizada && !fotoEnCola) {
+      if (r.sincronizada) {
         this.guardado.set('guardado');
       } else {
         this.guardado.set('pendiente');
-        // Cuando vuelva la red, Firestore envía la escritura. Si las reglas la rechazan
+        // Cuando vuelva la red, Firestore envía el lote. Si las reglas lo rechazan
         // (por ejemplo, un coordinador corrigió el acta antes: conflicto de versión),
         // se informa; en ese caso gana la versión del servidor.
         r.confirmacion.then(
           () => {
-            if (this.guardado() === 'pendiente' && !fotoEnCola) this.guardado.set('guardado');
+            if (this.guardado() === 'pendiente') this.guardado.set('guardado');
           },
           (e) => {
             this.guardado.set('error');

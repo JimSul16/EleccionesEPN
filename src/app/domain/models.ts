@@ -102,9 +102,12 @@ export function jrvId(recintoId: string, numero: number): string {
   return `${recintoId}_${numero}`;
 }
 
-/** Ruta en Storage de la foto de un acta. Debe coincidir con storage.rules. */
-export function rutaFotoActa(recintoId: string, jrv: string, dignidad: Dignidad, uuid: string): string {
-  return `actas/${recintoId}/${jrv}/${dignidad}-${uuid}.jpg`;
+/**
+ * Ruta en Firestore del documento con la foto de un acta (ADR-018).
+ * Debe coincidir con firestore.rules (match /fotos y actaBienFormada).
+ */
+export function rutaFotoActa(idActa: string, uuid: string): string {
+  return `fotos/${idActa}_${uuid}`;
 }
 
 /** Estado de la mesa según su veedor y cuántas actas (0, 1 o 2) tiene registradas. */

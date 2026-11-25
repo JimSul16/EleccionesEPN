@@ -2,7 +2,8 @@
  * Seed de datos iniciales (R1) con el Admin SDK.
  *
  *   Emulador:   firebase emulators:exec --project demo-elecciones-epn --only auth,firestore "node seed/seed.mjs --demo"
- *   Producción: GOOGLE_APPLICATION_CREDENTIALS=<clave de servicio> node seed/seed.mjs
+ *   Producción: GOOGLE_APPLICATION_CREDENTIALS=<clave de servicio fuera del repo> GCLOUD_PROJECT=elecciones-epn node seed/seed.mjs
+ *   (funciona en el plan gratuito Spark: el Admin SDK solo usa Auth y Firestore)
  *               (la clave de servicio NUNCA se commitea ni va en la app)
  *
  * Carga: recintos de Pichincha / Quito con sus JRV, 5 organizaciones, 5 candidaturas
@@ -104,14 +105,15 @@ async function asegurarUsuario({ cedula: ced, nombres, apellidos, telefono, emai
     uid = (await auth.createUser({ email, password: PASSWORD_INICIAL, displayName: `${nombres} ${apellidos}` })).uid;
     nuevo = true;
   }
-  await auth.setCustomUserClaims(uid, recintoId ? { rol, recintoId } : { rol });
+  // Plan Spark (ADR-018): el rol y el recinto viven en usuarios/{uid}, no en custom claims.
   const lote = db.batch();
   const perfil = { cedula: ced, nombres, apellidos, telefono, email, rol, recintoId: recintoId ?? null };
   // Solo al crear: volver a correr el seed no debe obligar a cambiar otra vez la contraseña.
   if (nuevo)
     Object.assign(perfil, { debeCambiarPassword: true, creadoPor: 'seed', creadoEn: FieldValue.serverTimestamp() });
   lote.set(db.doc(`usuarios/${uid}`), perfil, { merge: true });
-  lote.set(db.doc(`cedulas/${ced}`), { uid });
+  // Índice para el login por cédula (lo lee la app antes de iniciar sesión).
+  lote.set(db.doc(`cedulas/${ced}`), { uid, email });
   await lote.commit();
   return uid;
 }
@@ -148,6 +150,11 @@ async function main() {
   const sinVeedor = await db.collection('jrv').get();
   const lote2 = db.batch();
   sinVeedor.docs.filter((d) => d.get('veedorId') === undefined).forEach((d) => lote2.update(d.ref, { veedorId: null }));
+  // Igual con los recintos: coordinadorId null explícito (sin pisar uno ya asignado).
+  const recintos = await db.collection('recintos').get();
+  recintos.docs
+    .filter((d) => d.get('coordinadorId') === undefined)
+    .forEach((d) => lote2.update(d.ref, { coordinadorId: null }));
   await lote2.commit();
 
   const provincialEmail = process.env.SEED_PROVINCIAL_EMAIL ?? 'provincial.demo@example.com';

@@ -1,56 +1,11 @@
 rules_version = '2';
 
-// Fotos de actas (R7, R8). Ruta: actas/{recintoId}/{jrvId}/{dignidad}-{uuid}.jpg
-// Debe coincidir con rutaFotoActa() en src/app/domain/models.ts.
-// Los roles vienen de los custom claims; la asignación de la mesa se consulta en Firestore.
-
+// Cloud Storage NO se usa: en el plan gratuito Spark no está disponible desde
+// febrero de 2026 (ADR-018). Las fotos de las actas se guardan en Firestore
+// (colección fotos, ver firestore.rules). Si este archivo se desplegara por
+// error, todo queda cerrado.
 service firebase.storage {
   match /b/{bucket}/o {
-
-    function autenticado() { return request.auth != null; }
-    function rol() { return request.auth.token.rol; }
-    function miRecinto() { return request.auth.token.recintoId; }
-
-    function mesa(jrvId) {
-      return firestore.get(/databases/(default)/documents/jrv/$(jrvId)).data;
-    }
-
-    function veedorDeLaMesa(recintoId, jrvId) {
-      return autenticado() && rol() == 'VEEDOR'
-        && mesa(jrvId).veedorId == request.auth.uid
-        && mesa(jrvId).recintoId == recintoId;
-    }
-
-    function coordinadorDelRecinto(recintoId) {
-      return autenticado() && rol() == 'RECINTO' && miRecinto() == recintoId;
-    }
-
-    function imagenValida() {
-      return request.resource.size < 2 * 1024 * 1024
-        && request.resource.contentType == 'image/jpeg';
-    }
-
-    match /actas/{recintoId}/{jrvId}/{archivo} {
-      allow read: if (autenticado() && rol() == 'PROVINCIAL')
-        || coordinadorDelRecinto(recintoId)
-        || veedorDeLaMesa(recintoId, jrvId);
-
-      // Cada foto nueva lleva un uuid nuevo: no se sobrescriben ni se borran
-      // fotos anteriores, queda historial para auditoría.
-      allow create: if imagenValida()
-        && archivo.matches('(ALCALDE|PREFECTO)-[A-Za-z0-9-]+[.]jpg')
-        && jrvId.matches(recintoId + '_[0-9]+')
-        && (veedorDeLaMesa(recintoId, jrvId) || coordinadorDelRecinto(recintoId));
-
-      allow update, delete: if false;
-    }
-
-    // Reportes PDF opcionales (no los pide el examen).
-    match /reportes/{recintoId}/{archivo} {
-      allow read: if (autenticado() && rol() == 'PROVINCIAL') || coordinadorDelRecinto(recintoId);
-      allow write: if false;
-    }
-
     match /{todo=**} {
       allow read, write: if false;
     }

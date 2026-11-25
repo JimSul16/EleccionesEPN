@@ -1,16 +1,32 @@
 import { computed, inject, Injectable, signal } from '@angular/core';
-import { onAuthStateChanged, signInWithCustomToken, signOut, type User } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
-import { httpsCallable } from 'firebase/functions';
+import {
+  onAuthStateChanged,
+  sendPasswordResetEmail,
+  signInWithEmailAndPassword,
+  signOut,
+  updatePassword,
+  type User,
+} from 'firebase/auth';
+import { doc, getDoc, serverTimestamp, updateDoc } from 'firebase/firestore';
 
+import { esCedulaValida } from '../domain/cedula.validator';
 import type { Rol, Usuario } from '../domain/models';
+import { MENSAJES_PASSWORD, validarPasswordNueva } from '../domain/usuario.rules';
 
+import { ErrorParaUsuario } from './errores';
 import { FirebaseService } from './firebase';
 
+/** Error de acceso con un mensaje para mostrar tal cual al usuario. */
+export class ErrorDeAcceso extends ErrorParaUsuario {}
+
+export const CREDENCIALES_INCORRECTAS = 'Cédula o contraseña incorrecta.';
+export const MENSAJE_RECUPERACION = 'Si la cédula está registrada, se envió un correo para restablecer la contraseña.';
+
 /**
- * Estado de sesión con signals (ADR-006). Expone el perfil del usuario y su rol;
- * las acciones privilegiadas (login por cédula, cambio de contraseña,
- * recuperación) pasan por Cloud Functions.
+ * Sesión con signals (ADR-006). Plan gratuito Spark (ADR-018): sin Cloud
+ * Functions, todo con el SDK de Firebase Auth y las reglas de Firestore.
+ * - Login por cédula: cedulas/{cédula} da el correo y se inicia sesión con él.
+ * - El rol y el recinto salen del perfil usuarios/{uid} (lo mismo que leen las reglas).
  */
 @Injectable({ providedIn: 'root' })
 export class AuthService {
@@ -34,7 +50,8 @@ export class AuthService {
         try {
           this._usuario.set(user ? await this.cargarPerfil(user) : null);
         } catch {
-          // Perfil inaccesible (por ejemplo sin red y sin caché): se trata como sin sesión.
+          // Sin perfil (cuenta no creada por un coordinador) o sin red y sin caché:
+          // se trata como sin sesión.
           this._usuario.set(null);
         } finally {
           this._listo.set(true);
@@ -49,16 +66,29 @@ export class AuthService {
     return this.primerEstado;
   }
 
+  /** Login con la cédula como identificador visible (R3). Error siempre genérico. */
   async login(cedula: string, password: string): Promise<Usuario> {
-    const llamar = httpsCallable<{ cedula: string; password: string }, { token: string }>(
-      this.fb.functions,
-      'loginCedula',
-    );
-    const { data } = await llamar({ cedula: cedula.trim(), password });
-    const credencial = await signInWithCustomToken(this.fb.auth, data.token);
-    const perfil = await this.cargarPerfil(credencial.user);
-    this._usuario.set(perfil);
-    return perfil;
+    const email = await this.emailDeCedula(cedula);
+    if (!email || !password) throw new ErrorDeAcceso(CREDENCIALES_INCORRECTAS);
+    let user: User;
+    try {
+      user = (await signInWithEmailAndPassword(this.fb.auth, email, password)).user;
+    } catch (e) {
+      const codigo = (e as { code?: string }).code ?? '';
+      if (codigo === 'auth/too-many-requests') {
+        throw new ErrorDeAcceso('Demasiados intentos. Espere unos minutos e intente de nuevo.');
+      }
+      if (codigo === 'auth/network-request-failed') throw e;
+      throw new ErrorDeAcceso(CREDENCIALES_INCORRECTAS);
+    }
+    try {
+      const perfil = await this.cargarPerfil(user);
+      this._usuario.set(perfil);
+      return perfil;
+    } catch {
+      await signOut(this.fb.auth);
+      throw new ErrorDeAcceso('La cuenta no tiene un perfil asignado. Consulte a su coordinador.');
+    }
   }
 
   async logout(): Promise<void> {
@@ -66,22 +96,38 @@ export class AuthService {
     this._usuario.set(null);
   }
 
-  /**
-   * Cambio obligatorio en el primer acceso. Cambiar la contraseña revoca las
-   * sesiones del usuario, así que se vuelve a iniciar sesión con la nueva.
-   */
+  /** Cambio obligatorio en el primer acceso (R3). La política se valida aquí y en Firebase Auth. */
   async cambiarPassword(nueva: string): Promise<void> {
+    const user = this.fb.auth.currentUser;
     const actual = this._usuario();
-    if (!actual) throw new Error('Sin sesión');
-    const llamar = httpsCallable<{ nueva: string }, { ok: boolean }>(this.fb.functions, 'cambiarPassword');
-    await llamar({ nueva });
-    await this.login(actual.cedula, nueva);
+    if (!user || !actual) throw new ErrorDeAcceso('Su sesión expiró. Ingrese de nuevo.');
+    const errores = validarPasswordNueva(nueva);
+    if (errores.length > 0) throw new ErrorDeAcceso(errores.map((e) => MENSAJES_PASSWORD[e]).join(' '));
+    try {
+      await updatePassword(user, nueva);
+    } catch (e) {
+      if ((e as { code?: string }).code === 'auth/requires-recent-login') {
+        throw new ErrorDeAcceso('Por seguridad, cierre sesión e ingrese de nuevo antes de cambiar la contraseña.');
+      }
+      throw e;
+    }
+    await updateDoc(doc(this.fb.db, 'usuarios', user.uid), {
+      debeCambiarPassword: false,
+      passwordCambiadaEn: serverTimestamp(),
+    });
+    this._usuario.set({ ...actual, debeCambiarPassword: false });
   }
 
+  /** Recuperación por correo (R3): la respuesta es la misma exista o no la cédula. */
   async recuperarPassword(cedula: string): Promise<string> {
-    const llamar = httpsCallable<{ cedula: string }, { mensaje: string }>(this.fb.functions, 'recuperarPassword');
-    const { data } = await llamar({ cedula: cedula.trim() });
-    return data.mensaje;
+    try {
+      const email = await this.emailDeCedula(cedula);
+      if (email) await sendPasswordResetEmail(this.fb.auth, email);
+    } catch (e) {
+      // Sin red sí se informa; cualquier otro error se oculta para no revelar qué cédulas existen.
+      if ((e as { code?: string }).code === 'auth/network-request-failed') throw e;
+    }
+    return MENSAJE_RECUPERACION;
   }
 
   /** Ruta de inicio según el rol. */
@@ -98,9 +144,15 @@ export class AuthService {
     }
   }
 
+  /** Correo asociado a una cédula (cedulas/{cédula}), o null. */
+  private async emailDeCedula(cedula: string): Promise<string | null> {
+    const limpia = cedula.trim();
+    if (!esCedulaValida(limpia)) return null;
+    const snap = await getDoc(doc(this.fb.db, 'cedulas', limpia));
+    return snap.exists() ? (snap.get('email') as string) : null;
+  }
+
   private async cargarPerfil(user: User): Promise<Usuario> {
-    // El rol se toma de los custom claims (lo que también ven las reglas) y no del documento.
-    const token = await user.getIdTokenResult();
     const snap = await getDoc(doc(this.fb.db, 'usuarios', user.uid));
     if (!snap.exists()) throw new Error('Perfil no encontrado');
     const d = snap.data();
@@ -111,8 +163,8 @@ export class AuthService {
       apellidos: d['apellidos'],
       telefono: d['telefono'],
       email: d['email'],
-      rol: token.claims['rol'] as Rol,
-      recintoId: (token.claims['recintoId'] as string | undefined) ?? null,
+      rol: d['rol'] as Rol,
+      recintoId: (d['recintoId'] as string | null | undefined) ?? null,
       debeCambiarPassword: d['debeCambiarPassword'] === true,
     };
   }

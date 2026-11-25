@@ -1,12 +1,17 @@
 rules_version = '2';
 
-// Autorización real del sistema (R8). La app oculta pantallas por rol, pero quien
-// decide es este archivo. Los roles llegan como custom claims (rol, recintoId)
-// puestos por la Cloud Function crearUsuario; el cliente no puede modificarlos.
+// Autorización real del sistema (R8), en el plan gratuito Spark (ADR-018):
+// sin Cloud Functions ni Storage. La app oculta pantallas por rol, pero quien
+// decide es este archivo.
 //
-// Nota: las reglas NO son filtros. Las consultas de lista deben incluir el mismo
-// filtro que exige la regla (por ejemplo where('recintoId', '==', miRecinto)).
-// El veedor lee mesas con where('veedorId', '==', uid) y actas por ID.
+// - El rol y el recinto de cada usuario están en usuarios/{uid}. Un usuario sin
+//   perfil (por ejemplo, alguien que creó una cuenta de Auth por su cuenta) no
+//   tiene ningún permiso.
+// - Las cuentas las crea la app del coordinador: el perfil y el índice de cédula
+//   se escriben en un solo lote y estas reglas validan la jerarquía (R2).
+// - Las fotos de las actas viven en la colección fotos con las mismas reglas
+//   por mesa que las actas (R7, R8).
+// - Las reglas NO son filtros: cada consulta lleva el filtro que exige la regla.
 
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -14,11 +19,14 @@ service cloud.firestore {
     // ---------- Helpers de identidad ----------
     function autenticado() { return request.auth != null; }
     function uid() { return request.auth.uid; }
-    function rol() { return request.auth.token.rol; }
-    function miRecinto() { return request.auth.token.recintoId; }
-    function esProvincial() { return autenticado() && rol() == 'PROVINCIAL'; }
-    function esRecinto() { return autenticado() && rol() == 'RECINTO'; }
-    function esVeedor() { return autenticado() && rol() == 'VEEDOR'; }
+    function rutaPerfil(id) { return /databases/$(database)/documents/usuarios/$(id); }
+    function tienePerfil() { return autenticado() && exists(rutaPerfil(uid())); }
+    function perfil() { return get(rutaPerfil(uid())).data; }
+    function rolEs(r) { return tienePerfil() && perfil().rol == r; }
+    function esProvincial() { return rolEs('PROVINCIAL'); }
+    function esRecinto() { return rolEs('RECINTO'); }
+    function esVeedor() { return rolEs('VEEDOR'); }
+    function miRecinto() { return perfil().recintoId; }
 
     function jrv(id) { return get(/databases/$(database)/documents/jrv/$(id)).data; }
 
@@ -28,6 +36,8 @@ service cloud.firestore {
     function cambiaSolo(campos) {
       return request.resource.data.diff(resource.data).affectedKeys().hasOnly(campos);
     }
+
+    function textoValido(v, max) { return v is string && v.size() > 0 && v.size() <= max; }
 
     // Mismo criterio que src/app/domain/acta.rules.ts
     function conteoValido(d) {
@@ -49,14 +59,14 @@ service cloud.firestore {
         && u.precisionM is number && u.precisionM >= 0);
     }
 
+    // fotoPath apunta al documento de la foto: fotos/{actaId}_{uuid}
     function actaBienFormada(id, d) {
       return d.keys().hasOnly(['jrvId', 'recintoId', 'dignidad', 'votos', 'nulos', 'blancos',
                                'totalSufragantes', 'fotoPath', 'ubicacion', 'estado', 'version',
                                'registradoPor', 'updatedBy', 'createdAt', 'updatedAt'])
         && d.dignidad in ['ALCALDE', 'PREFECTO']
         && id == d.jrvId + '_' + d.dignidad
-        && (d.fotoPath == null || (d.fotoPath is string
-            && d.fotoPath.matches('actas/' + d.recintoId + '/' + d.jrvId + '/' + d.dignidad + '-[A-Za-z0-9-]+[.]jpg')))
+        && (d.fotoPath == null || (d.fotoPath is string && d.fotoPath.matches('fotos/' + id + '_[A-Za-z0-9-]+')))
         && ubicacionValida(d.ubicacion)
         && d.estado in ['REGISTRADA', 'CORREGIDA']
         && d.updatedBy == uid()
@@ -64,7 +74,6 @@ service cloud.firestore {
         && conteoValido(d);
     }
 
-    // Veedor asignado a la mesa, o coordinador del recinto de la mesa.
     // ID de acta: {recintoId}_{numero}_{dignidad}. Los IDs de recinto son
     // alfanuméricos (sin '_'), así que la mesa son las dos primeras partes.
     function mesaDeActa(actaId) {
@@ -72,45 +81,99 @@ service cloud.firestore {
       return jrv(partes[0] + '_' + partes[1]);
     }
 
+    // Veedor asignado a la mesa, o coordinador del recinto de la mesa.
     function puedeEscribirActa(jrvId) {
       let mesa = jrv(jrvId);
       return (esVeedor() && mesa.veedorId == uid())
           || (esRecinto() && mesa.recintoId == miRecinto());
     }
 
-    // ---------- Usuarios: solo los escriben las Cloud Functions ----------
+    // ---------- Usuarios (R2, R3) ----------
+    function perfilNuevoValido(d) {
+      return d.keys().hasOnly(['cedula', 'nombres', 'apellidos', 'telefono', 'email', 'rol',
+                               'recintoId', 'debeCambiarPassword', 'creadoPor', 'creadoEn'])
+        && d.cedula is string && d.cedula.matches('[0-9]{10}')
+        && textoValido(d.nombres, 80) && textoValido(d.apellidos, 80)
+        && d.telefono is string && d.telefono.matches('09[0-9]{8}')
+        && d.email is string && d.email.matches('[^@ ]+@[^@ ]+[.][^@ ]+')
+        && d.recintoId is string
+        && d.debeCambiarPassword == true
+        && d.creadoPor == uid()
+        && d.creadoEn == request.time;
+    }
+
+    function rutaRecinto(id) { return /databases/$(database)/documents/recintos/$(id); }
+
     match /usuarios/{usuarioId} {
       allow get: if autenticado() && (usuarioId == uid() || esProvincial()
                     || (esRecinto() && resource.data.recintoId == miRecinto()));
       allow list: if esProvincial() || (esRecinto() && resource.data.recintoId == miRecinto());
-      allow write: if false;
+
+      // Alta por jerarquía: PROVINCIAL crea el coordinador de un recinto libre;
+      // RECINTO crea veedores de su propio recinto. El índice de cédula se crea
+      // en el mismo lote (getAfter), así no puede haber dos cuentas con la misma cédula.
+      allow create: if autenticado() && usuarioId != uid()
+        && perfilNuevoValido(request.resource.data)
+        && getAfter(/databases/$(database)/documents/cedulas/$(request.resource.data.cedula)).data.uid == usuarioId
+        && (
+          (esProvincial() && request.resource.data.rol == 'RECINTO'
+            && exists(rutaRecinto(request.resource.data.recintoId))
+            && get(rutaRecinto(request.resource.data.recintoId)).data.get('coordinadorId', null) == null
+            && getAfter(rutaRecinto(request.resource.data.recintoId)).data.coordinadorId == usuarioId)
+          || (esRecinto() && request.resource.data.rol == 'VEEDOR'
+            && request.resource.data.recintoId == miRecinto())
+        );
+
+      // El propio usuario solo puede marcar que ya cambió la contraseña inicial.
+      allow update: if autenticado() && usuarioId == uid()
+        && cambiaSolo(['debeCambiarPassword', 'passwordCambiadaEn'])
+        && request.resource.data.debeCambiarPassword == false
+        && request.resource.data.passwordCambiadaEn == request.time;
+
+      allow delete: if false;
     }
 
-    // Índice cédula -> uid, privado.
+    // Índice cédula -> { uid, email }. Se puede consultar por ID sin sesión (lo
+    // necesita el login por cédula), pero no listar. Riesgo aceptado en ADR-018:
+    // quien conozca una cédula registrada puede ver el correo asociado.
     match /cedulas/{cedula} {
-      allow read, write: if false;
+      allow get: if true;
+      allow list: if false;
+      allow create: if autenticado()
+        && request.resource.data.keys().hasOnly(['uid', 'email'])
+        && getAfter(rutaPerfil(request.resource.data.uid)).data.cedula == cedula
+        && getAfter(rutaPerfil(request.resource.data.uid)).data.email == request.resource.data.email
+        && getAfter(rutaPerfil(request.resource.data.uid)).data.creadoPor == uid();
+      allow update, delete: if false;
     }
 
     // ---------- Catálogos (R1): solo lectura, se cargan con el seed ----------
     match /organizaciones/{id} {
-      allow read: if autenticado();
+      allow read: if tienePerfil();
       allow write: if false;
     }
     match /candidatos/{id} {
-      allow read: if autenticado();
+      allow read: if tienePerfil();
       allow write: if false;
     }
 
     // ---------- Recintos (R4) ----------
     match /recintos/{recintoId} {
-      allow read: if esProvincial() || (autenticado() && miRecinto() == recintoId);
+      allow read: if esProvincial() || (tienePerfil() && miRecinto() == recintoId);
       allow create: if esProvincial()
         && request.resource.data.keys().hasOnly(['provincia', 'canton', 'parroquia', 'nombre', 'numJrv', 'lat', 'lng', 'coordinadorId'])
         && request.resource.data.nombre is string && request.resource.data.nombre.size() > 0
         && request.resource.data.numJrv is int && request.resource.data.numJrv > 0 && request.resource.data.numJrv <= 200
         && request.resource.data.coordinadorId == null;
-      // coordinadorId lo asigna la Function crearUsuario.
-      allow update: if esProvincial() && cambiaSolo(['provincia', 'canton', 'parroquia', 'nombre', 'lat', 'lng']);
+      // Datos del recinto, o asignar su coordinador (solo si no tiene, y en el mismo
+      // lote en que se crea el perfil del coordinador de ese recinto).
+      allow update: if esProvincial() && (
+        cambiaSolo(['provincia', 'canton', 'parroquia', 'nombre', 'lat', 'lng'])
+        || (cambiaSolo(['coordinadorId'])
+            && resource.data.get('coordinadorId', null) == null
+            && getAfter(rutaPerfil(request.resource.data.coordinadorId)).data.rol == 'RECINTO'
+            && getAfter(rutaPerfil(request.resource.data.coordinadorId)).data.recintoId == recintoId)
+      );
       allow delete: if false;
     }
 
@@ -126,7 +189,7 @@ service cloud.firestore {
         && jrvId == request.resource.data.recintoId + '_' + string(request.resource.data.numero)
         && request.resource.data.veedorId == null
         // existsAfter: el recinto y sus JRV se crean en el mismo lote atómico.
-        && existsAfter(/databases/$(database)/documents/recintos/$(request.resource.data.recintoId));
+        && existsAfter(rutaRecinto(request.resource.data.recintoId));
 
       // Asignar o reasignar veedor: solo el coordinador del recinto, solo ese campo,
       // y el veedor tiene que ser de su mismo recinto.
@@ -134,17 +197,16 @@ service cloud.firestore {
         && resource.data.recintoId == miRecinto()
         && cambiaSolo(['veedorId'])
         && (request.resource.data.veedorId == null || (
-              get(/databases/$(database)/documents/usuarios/$(request.resource.data.veedorId)).data.rol == 'VEEDOR'
-              && get(/databases/$(database)/documents/usuarios/$(request.resource.data.veedorId)).data.recintoId == miRecinto()));
+              get(rutaPerfil(request.resource.data.veedorId)).data.rol == 'VEEDOR'
+              && get(rutaPerfil(request.resource.data.veedorId)).data.recintoId == miRecinto()));
 
       allow delete: if false;
     }
 
     // ---------- Actas (R5, R6, R7) ----------
     match /actas/{actaId} {
-      // Lectura por ID ({jrvId}_{dignidad}). La mesa se obtiene del ID y no de
-      // resource.data: así también se puede consultar un acta que todavía no existe
-      // (el caso normal de una mesa sin registrar), donde resource es null.
+      // Lectura por ID: la mesa se obtiene del ID, así también se puede consultar
+      // un acta que todavía no existe (resource es null).
       allow get: if esProvincial()
         || (esRecinto() && mesaDeActa(actaId).recintoId == miRecinto())
         || (esVeedor() && mesaDeActa(actaId).veedorId == uid());
@@ -157,8 +219,7 @@ service cloud.firestore {
         && request.resource.data.registradoPor == uid()
         && request.resource.data.createdAt == request.time;
 
-      // Corrección: control optimista de versión. Si otro escribió antes, la versión
-      // ya no es la esperada y la escritura se rechaza (estrategia de conflictos R10).
+      // Corrección con control optimista de versión (conflictos R10).
       allow update: if puedeEscribirActa(resource.data.jrvId)
         && actaBienFormada(actaId, request.resource.data)
         && request.resource.data.version == resource.data.version + 1
@@ -171,10 +232,52 @@ service cloud.firestore {
       allow delete: if false;
     }
 
-    // ---------- Auditoría: la escribe una Function trigger ----------
+    // ---------- Fotos de actas (R7, R8) ----------
+    // JPEG en base64 (máximo ~700 KB tras comprimir; el documento admite 1 MiB).
+    // Nunca se sobrescriben ni se borran: cada foto nueva tiene un id nuevo.
+    match /fotos/{fotoId} {
+      allow get: if esProvincial()
+        || (esRecinto() && resource.data.recintoId == miRecinto())
+        || (esVeedor() && jrv(resource.data.jrvId).veedorId == uid());
+      allow list: if false;
+
+      allow create: if puedeEscribirActa(request.resource.data.jrvId)
+        && request.resource.data.keys().hasOnly(['actaId', 'jrvId', 'recintoId', 'dignidad', 'mime',
+                                                  'imagen', 'bytes', 'creadoPor', 'creadoEn'])
+        && request.resource.data.dignidad in ['ALCALDE', 'PREFECTO']
+        && request.resource.data.actaId == request.resource.data.jrvId + '_' + request.resource.data.dignidad
+        && request.resource.data.recintoId == jrv(request.resource.data.jrvId).recintoId
+        && fotoId.matches(request.resource.data.actaId + '_[A-Za-z0-9-]+')
+        && request.resource.data.mime == 'image/jpeg'
+        && request.resource.data.imagen is string
+        && request.resource.data.imagen.size() > 0
+        && request.resource.data.imagen.size() < 950000
+        && request.resource.data.bytes is int
+        && request.resource.data.creadoPor == uid()
+        && request.resource.data.creadoEn == request.time;
+
+      allow update, delete: if false;
+    }
+
+    // ---------- Auditoría (R5, R6) ----------
+    // La escribe la app en el MISMO lote que el acta: las reglas exigen que el acta
+    // quede escrita en esta misma petición por este usuario y con esta versión.
+    function auditoriaValida(d) {
+      let acta = getAfter(/databases/$(database)/documents/actas/$(d.actaId)).data;
+      return d.keys().hasOnly(['actaId', 'recintoId', 'usuario', 'accion', 'version', 'antes', 'despues', 'fecha'])
+        && d.usuario == uid()
+        && d.fecha == request.time
+        && acta.updatedBy == uid()
+        && acta.updatedAt == request.time
+        && acta.version == d.version
+        && acta.recintoId == d.recintoId
+        && d.accion == (d.version == 1 ? 'CREAR' : 'CORREGIR');
+    }
+
     match /auditoria/{id} {
       allow get, list: if esProvincial() || (esRecinto() && resource.data.recintoId == miRecinto());
-      allow write: if false;
+      allow create: if autenticado() && auditoriaValida(request.resource.data);
+      allow update, delete: if false;
     }
   }
 }
