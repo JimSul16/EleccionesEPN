@@ -12,7 +12,7 @@ Verificación sobre `main`: lint, 41 unitarias, 4 E2E, 45 de reglas, 13 de integ
 | C-01..C-11 | Dominio, reglas, datos, tres roles, dashboard, offline, seed, pruebas, ADR, README, IA.md, DEFENSA.md | done |
 | C-14 | Migración al plan gratuito: roles en `usuarios`, alta de cuentas desde la app, fotos en Firestore, auditoría en el lote del acta; ADR-018 | done |
 | C-13 | Revisar y unir OpenCode (T-010..T-012) | done |
-| C-12 | Calibrar `UMBRAL_NITIDEZ` con los 6 puntajes del teléfono | todo: espera los 6 puntajes en `PRUEBA-TELEFONO.md` (A-08) |
+| C-12 | Calibrar `UMBRAL_NITIDEZ` con los 6 puntajes del teléfono | por revisar: con `80` aceptó 3/3 nítidas y rechazó 3/3 borrosas en teléfono (sin cifras individuales anotadas) |
 | C-15 | Corregir las FALLAS de la prueba en el teléfono: dashboard con "error inesperado" (ahora suma en el cliente, ADR-017) y aviso verde ilegible al guardar acta | done (unido en `main` `4ea67a4`) |
 | C-16 | Enlace del APK (GitHub Release) en el README | todo: miércoles |
 
@@ -32,8 +32,8 @@ Verificación sobre `main`: lint, 41 unitarias, 4 E2E, 45 de reglas, 13 de integ
 | A-08 (guía) | `docs/setup/PRUEBA-TELEFONO.md` corregida | done |
 | A-04 | Deploy **solo** `firestore:rules,firestore:indexes` (plan gratuito: nada de Functions ni Storage) | done (`Deploy complete!` en `elecciones-epn`) |
 | A-09 | Seed de producción con la clave de servicio fuera del repo | done (6 recintos, 33 JRV, 5 orgs, 10 candidaturas, 4 cuentas + 24 actas demo en `elecciones-epn`) |
-| S-08 | APK debug desde `main` y prueba en el teléfono (llenar PRUEBA-TELEFONO.md y los 6 puntajes de nitidez) | in-progress (resultados preliminares y 2 fallas registradas en `PRUEBA-TELEFONO.md`; faltan los 6 puntajes de nitidez y re-probar tras C-15) |
-| A-10 | Subir `main` a https://github.com/JimSul16/EleccionesEPN | done (push inicial `d544fe3` verificado; se actualizará de nuevo tras C-15, S-08 y README) |
+| S-08 | APK debug desde `main` y prueba en el teléfono (llenar PRUEBA-TELEFONO.md y los 6 puntajes de nitidez) | done (APK `10.05 MB` instalado en TECNO LH7n; 15/15 pasos OK tras `C-15`; 3 nítidas aceptadas y 3 borrosas rechazadas con `80`) |
+| A-10 | Subir `main` a https://github.com/JimSul16/EleccionesEPN | done (push inicial `d544fe3` verificado; rama `agent/antigravity/A-07` subida para merge final de Claude) |
 | A-12 | Miércoles: APK release firmado + GitHub Release v1.0.0 | todo |
 
 ## Usuario
@@ -42,6 +42,6 @@ Verificación sobre `main`: lint, 41 unitarias, 4 E2E, 45 de reglas, 13 de integ
 |---|---|---|
 | U-00 | **No activar Blaze.** En la consola: Firestore creado, proveedor Correo/contraseña activo, plantillas de correo en español | done (Firestore y Correo/contraseña activos en `elecciones-epn`) |
 | U-01 | Mover la carpeta `.env2/` (clave de servicio) fuera del proyecto | todo |
-| U-02 | Prueba en el teléfono con Antigravity | todo |
+| U-02 | Prueba en el teléfono con Antigravity | done |
 | U-03 | `docs/IA.md`: prompts literales y sección 7; consenso del grupo en los ADR (incluido ADR-018) | todo |
 | U-04 | Entregables de grupo y coevaluación | todo |
