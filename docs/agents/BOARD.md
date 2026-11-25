@@ -34,7 +34,7 @@ Verificación sobre `main`: lint, 41 unitarias, 4 E2E, 45 de reglas, 13 de integ
 | A-09 | Seed de producción con la clave de servicio fuera del repo | done (6 recintos, 33 JRV, 5 orgs, 10 candidaturas, 4 cuentas + 24 actas demo en `elecciones-epn`) |
 | S-08 | APK debug desde `main` y prueba en el teléfono (llenar PRUEBA-TELEFONO.md y los 6 puntajes de nitidez) | done (APK `10.05 MB` instalado en TECNO LH7n; 15/15 pasos OK tras `C-15`; 3 nítidas aceptadas y 3 borrosas rechazadas con `80`) |
 | A-10 | Subir `main` a https://github.com/JimSul16/EleccionesEPN | done (push inicial `d544fe3` verificado; rama `agent/antigravity/A-07` subida para merge final de Claude) |
-| A-12 | Miércoles: APK release firmado + GitHub Release v1.0.0 | todo |
+| A-12 | Miércoles: APK release firmado + GitHub Release v1.0.0 | done (`app-release.apk` `7.57 MB` / `7,941,736 bytes`, firmado fuera del repo, verificado con `apksigner` + login en `TECNO LH7n` y publicado en `releases/tag/v1.0.0`) |
 
 ## Usuario
 
