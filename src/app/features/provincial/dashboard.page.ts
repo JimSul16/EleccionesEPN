@@ -1,4 +1,4 @@
-import { Component, effect, inject, signal, untracked, viewChild } from '@angular/core';
+import { computed, Component, effect, inject, signal, viewChild } from '@angular/core';
 import type { OnDestroy, ElementRef } from '@angular/core';
 import {
   IonBackButton,
@@ -18,9 +18,9 @@ import {
 import { BarController, BarElement, CategoryScale, Chart, LinearScale, Tooltip } from 'chart.js';
 
 import { mensajeDeError } from '../../core/errores';
-import { ActaRepository, type TotalesVotos } from '../../data/acta.repository';
 import { CatalogoRepository } from '../../data/catalogo.repository';
 import { ORGANIZACION_IDS, type Candidato, type Dignidad, type Organizacion } from '../../domain/models';
+import { sumarActas, type TotalesVotos } from '../../domain/totales';
 
 import { ProvincialStore } from './provincial.store';
 
@@ -37,8 +37,8 @@ type Estado =
 
 /**
  * Dashboard de votos por candidato (R4): por dignidad, consolidado o por recinto.
- * Los totales se calculan en el servidor con consultas de agregación y se
- * recalculan cuando cambian las actas. Un solo color neutro para todas las
+ * Los totales se suman sobre las actas que el store recibe en tiempo real, así
+ * se actualizan solos y no dependen de índices ni de consultas de agregación. Un solo color neutro para todas las
  * barras: el gráfico no asocia colores a partidos. La tabla repite los datos
  * para lectores de pantalla.
  */
@@ -68,31 +68,47 @@ type Estado =
 })
 export class DashboardPage implements OnDestroy {
   readonly store = inject(ProvincialStore);
-  private readonly actas = inject(ActaRepository);
   private readonly catalogo = inject(CatalogoRepository);
 
   readonly dignidad = signal<Dignidad>('ALCALDE');
   /** '' = consolidado provincial. */
   readonly recintoId = signal<string>('');
-  readonly estado = signal<Estado>({ estado: 'cargando' });
-  readonly filas = signal<FilaResultado[]>([]);
-
   private readonly lienzo = viewChild<ElementRef<HTMLCanvasElement>>('grafico');
   private grafico?: Chart;
-  private organizaciones: Organizacion[] = [];
-  private candidatos: Candidato[] = [];
-  private consulta = 0;
+  private readonly catalogoCargado = signal<{ organizaciones: Organizacion[]; candidatos: Candidato[] } | null>(
+    null,
+  );
+  private readonly errorCatalogo = signal<string | null>(null);
+
+  readonly estado = computed<Estado>(() => {
+    const error = this.errorCatalogo();
+    if (error) return { estado: 'error', mensaje: error };
+    const actas = this.store.actasEnVivo();
+    if (actas.estado === 'error') return { estado: 'error', mensaje: actas.mensaje };
+    if (actas.estado === 'cargando' || !this.catalogoCargado()) return { estado: 'cargando' };
+    return { estado: 'listo', totales: sumarActas(actas.datos, this.dignidad(), this.recintoId() || undefined) };
+  });
+
+  readonly filas = computed<FilaResultado[]>(() => {
+    const e = this.estado();
+    const cat = this.catalogoCargado();
+    if (e.estado !== 'listo' || !cat) return [];
+    const { totales } = e;
+    const dignidad = this.dignidad();
+    const validos = ORGANIZACION_IDS.reduce((s, o) => s + totales.votos[o], 0);
+    return cat.organizaciones.map((o) => {
+      const c = cat.candidatos.find((x) => x.organizacionId === o.id && x.dignidad === dignidad);
+      const votos = totales.votos[o.id];
+      return {
+        etiqueta: `${o.siglas} · ${c?.nombre ?? 'Sin candidatura'}`,
+        votos,
+        porcentaje: validos ? Math.round((votos / validos) * 1000) / 10 : 0,
+      };
+    });
+  });
 
   constructor() {
-    // Recalcular al cambiar filtros o cuando llegan actas nuevas o corregidas.
-    // cargar() se ejecuta con untracked: lee y escribe `estado`, y si el effect lo
-    // registrara como dependencia se volvería a disparar sin fin.
-    effect(() => {
-      const dignidad = this.dignidad();
-      const recinto = this.recintoId();
-      this.store.totalActas();
-      untracked(() => void this.cargar(dignidad, recinto));
-    });
+    void this.cargarCatalogo();
     effect(() => this.dibujar(this.filas(), this.lienzo()?.nativeElement));
   }
 
@@ -100,33 +116,15 @@ export class DashboardPage implements OnDestroy {
     this.grafico?.destroy();
   }
 
-  private async cargar(dignidad: Dignidad, recintoId: string): Promise<void> {
-    const id = ++this.consulta;
-    if (this.estado().estado !== 'listo') this.estado.set({ estado: 'cargando' });
+  private async cargarCatalogo(): Promise<void> {
     try {
-      if (this.organizaciones.length === 0) {
-        [this.organizaciones, this.candidatos] = await Promise.all([
-          this.catalogo.organizaciones(),
-          this.catalogo.candidatos(),
-        ]);
-      }
-      const totales = await this.actas.totales(dignidad, recintoId || undefined);
-      if (id !== this.consulta) return; // Llegó una respuesta vieja: se descarta.
-      const validos = ORGANIZACION_IDS.reduce((s, o) => s + totales.votos[o], 0);
-      this.filas.set(
-        this.organizaciones.map((o) => {
-          const c = this.candidatos.find((x) => x.organizacionId === o.id && x.dignidad === dignidad);
-          const votos = totales.votos[o.id];
-          return {
-            etiqueta: `${o.siglas} · ${c?.nombre ?? 'Sin candidatura'}`,
-            votos,
-            porcentaje: validos ? Math.round((votos / validos) * 1000) / 10 : 0,
-          };
-        }),
-      );
-      this.estado.set({ estado: 'listo', totales });
+      const [organizaciones, candidatos] = await Promise.all([
+        this.catalogo.organizaciones(),
+        this.catalogo.candidatos(),
+      ]);
+      this.catalogoCargado.set({ organizaciones, candidatos });
     } catch (e) {
-      if (id === this.consulta) this.estado.set({ estado: 'error', mensaje: mensajeDeError(e) });
+      this.errorCatalogo.set(mensajeDeError(e));
     }
   }
 

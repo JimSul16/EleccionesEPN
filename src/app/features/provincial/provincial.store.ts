@@ -26,9 +26,8 @@ export interface PuntoActa {
 type Vista<T> = { estado: 'cargando' } | { estado: 'error'; mensaje: string } | { estado: 'listo'; datos: T };
 
 /**
- * Datos del coordinador provincial (R4): avance por recinto y ubicaciones de
- * las actas, en tiempo real. Los totales de votos del dashboard se piden aparte
- * como consultas de agregación (ver DashboardPage).
+ * Datos del coordinador provincial (R4): avance por recinto, ubicaciones de
+ * las actas y las actas para los totales del dashboard, en tiempo real.
  *
  * Se provee por página (no en root): así las suscripciones a Firestore se
  * cierran al salir de la pantalla y no quedan vivas tras cerrar sesión.
@@ -114,12 +113,13 @@ export class ProvincialStore {
     { initialValue: [] as Recinto[] },
   );
 
-  /** Cantidad de actas: el dashboard la usa para refrescar sus totales cuando cambia. */
-  readonly totalActas = toSignal(
+  /** Actas en tiempo real; el dashboard suma sus votos (ver sumarActas). */
+  readonly actasEnVivo = toSignal(
     this.fuentes$.pipe(
-      map(([, actas]) => actas.reduce((s, a) => s + a.version, 0)),
-      catchError(() => of(0)),
+      map(([, actas]): Vista<Acta[]> => ({ estado: 'listo', datos: actas })),
+      startWith({ estado: 'cargando' } as const),
+      catchError((e) => of({ estado: 'error', mensaje: mensajeDeError(e) } as const)),
     ),
-    { initialValue: 0 },
+    { initialValue: { estado: 'cargando' } as const },
   );
 }
