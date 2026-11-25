@@ -24,7 +24,7 @@ La foto debe tomarse desde la app (no de la galería), rechazarse si está borro
 
 ## Consecuencias
 - Beneficio: no se acepta un acta sin foto nítida y sin GPS.
-- **Riesgo:** un umbral mal calibrado rechaza fotos buenas o acepta borrosas. Mitigación: medir 3 fotos nítidas y 3 borrosas en el teléfono de la demo y ajustar `UMBRAL_NITIDEZ` (tarea pendiente; registrar aquí el valor final).
+- **Riesgo:** un umbral mal calibrado rechaza fotos buenas o acepta borrosas. Mitigación aplicada el 2026-11-25: en el teléfono de la demo se tomaron 3 fotos nítidas y 3 borrosas (movimiento de la mano, foco a menos de 10 cm, movimiento rápido). Con `UMBRAL_NITIDEZ = 80` se aceptaron las 3 nítidas y se rechazaron las 3 borrosas, así que el valor final es 80. Los puntajes exactos no se anotaron ([PRUEBA-TELEFONO.md](../setup/PRUEBA-TELEFONO.md), paso 10).
 - Limitación: en el navegador no hay permisos nativos; la prueba real es en el APK.
 
 ## Verificación

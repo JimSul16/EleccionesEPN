@@ -12,8 +12,8 @@ Verificación sobre `main`: lint, 41 unitarias, 4 E2E, 45 de reglas, 13 de integ
 | C-01..C-11 | Dominio, reglas, datos, tres roles, dashboard, offline, seed, pruebas, ADR, README, IA.md, DEFENSA.md | done |
 | C-14 | Migración al plan gratuito: roles en `usuarios`, alta de cuentas desde la app, fotos en Firestore, auditoría en el lote del acta; ADR-018 | done |
 | C-13 | Revisar y unir OpenCode (T-010..T-012) | done |
-| C-12 | Calibrar `UMBRAL_NITIDEZ` con los 6 puntajes del teléfono | por revisar: con `80` aceptó 3/3 nítidas y rechazó 3/3 borrosas en teléfono (sin cifras individuales anotadas) |
-| C-15 | Corregir las FALLAS de la prueba en el teléfono: dashboard con "error inesperado" (ahora suma en el cliente, ADR-017) y aviso verde ilegible al guardar acta | done (unido en `main` `4ea67a4`) |
+| C-12 | Calibrar `UMBRAL_NITIDEZ` con la prueba en el teléfono | done (80: 3/3 nítidas aceptadas, 3/3 borrosas rechazadas; ADR-008) |
+| C-15 | Corregir las FALLAS de la prueba en el teléfono: dashboard (suma en el cliente, ADR-017) y aviso verde ilegible | done (re-probado OK en el teléfono) |
 | C-16 | Enlace del APK (GitHub Release) en el README | todo: miércoles |
 
 ## OpenCode
