@@ -1,6 +1,6 @@
 # ADR-004: Autenticar por cédula con Cloud Functions y custom claims
 
-**Estado:** Aceptado
+**Estado:** Reemplazado por [ADR-018](ADR-018-firebase-spark-sin-functions.md): sin Cloud Functions, la cuenta se crea desde la app y el rol vive en `usuarios/{uid}`.
 **Fecha:** 2026-11-23
 **Autor(es) y equipo:** Jimy Lucero San Lucas · Grupo 5
 **Requisitos relacionados:** R2 (sin autorregistro, jerarquía de creación, cédula validada, confirmación de cuenta), R3 (cédula como identificador, contraseña inicial Ecuador2026, cambio obligatorio, recuperación por correo, no exponer claves administrativas).

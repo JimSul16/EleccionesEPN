@@ -4,13 +4,13 @@
 
 | Validación | Cliente | Servidor | Cómo demostrarla |
 |---|---|---|---|
-| Cédula ecuatoriana (módulo 10) | `src/app/domain/cedula.validator.ts` + `form-validators.ts` | `functions/src/shared/validaciones.ts` (en `crearUsuario`) | Crear veedor con `1712345670` (verificador malo) muestra el error; `cedula.validator.spec.ts` |
+| Cédula ecuatoriana (módulo 10) | `src/app/domain/cedula.validator.ts` + `form-validators.ts` | `firestore.rules` exige 10 dígitos y cédula única (el módulo 10 solo en la app, riesgo declarado en ADR-018) | Crear veedor con `1712345670` muestra el error; `cedula.validator.spec.ts`; prueba de reglas "NO se repite una cédula ya registrada" |
 | Totales del acta (votos + nulos + blancos = total) | `src/app/domain/acta.rules.ts` (en vivo: "Faltan N" / "Sobran N") | `firestore.rules`, función `conteoValido` | En el formulario; `npm run test:rules` caso "rechaza un acta cuyos totales no cuadran" |
 | Enteros no negativos | `acta.rules.ts` | `firestore.rules` (`enteroValido`) | Pruebas de reglas "rechaza votos negativos o decimales" |
-| Foto nítida | `src/app/domain/nitidez.ts` (varianza del Laplaciano) | Storage: solo JPEG de menos de 2 MB | Tomar una foto movida: se rechaza con su puntaje |
-| Veedor solo ve sus mesas (R8) | Consulta `where('veedorId','==',uid)` | `firestore.rules` (`jrv` y `actas`), `storage.rules` | `npm run test:rules`, bloque "Veedor: aislamiento de mesas" |
-| Jerarquía de cuentas | Pantallas por rol | `crearUsuario` (`puedeCrear`) | `tests/integracion/cuentas.mjs` |
-| Contraseña nueva | `usuario.rules.ts` (requisitos en vivo) | `cambiarPassword` (`esPasswordSegura`) | Intentar `Ecuador2026` como nueva |
+| Foto nítida | `src/app/domain/nitidez.ts` (varianza del Laplaciano) | `firestore.rules` (`fotos`): solo JPEG, tamaño máximo, solo en mesas propias | Tomar una foto movida: se rechaza con su puntaje |
+| Veedor solo ve sus mesas (R8) | Consulta `where('veedorId','==',uid)` | `firestore.rules` (`jrv`, `actas` y `fotos`) | `npm run test:rules`, bloque "Veedor: aislamiento de mesas" |
+| Jerarquía de cuentas | Pantallas por rol | `firestore.rules` (`usuarios` create) | Bloque de reglas "Alta de cuentas por jerarquía"; `tests/integracion/cuentas.mjs` |
+| Contraseña nueva | `usuario.rules.ts` (requisitos en vivo y antes de `updatePassword`) | Firebase Auth; las reglas solo dejan marcar `debeCambiarPassword: false` | Intentar `Ecuador2026` como nueva |
 | Conflicto de versión | `ActaRepository.guardar` (`version + 1`) | `firestore.rules` (update) | Prueba "corrección: exige version + 1" |
 
 ## 2. Preguntas orientadoras
@@ -32,7 +32,7 @@ Errores traducidos en `core/errores.ts` con opción de reintentar. Sin red: Fire
 
 ## 3. Guion de demostración (unos 8 minutos)
 
-Antes: correr `npm run test:rules` una vez, abrir la app en el teléfono, llamar una Function para que no haya arranque en frío.
+Antes: correr `npm run test:rules` una vez y abrir la app en el teléfono con buena señal.
 
 1. **Veedor** (`1700000027`): login con cédula, cambio de contraseña obligatorio, solo ve sus 2 mesas. Registrar el acta de alcaldía con un total que no cuadra ("Faltan 5"), corregirlo, tomar una foto movida (rechazada) y una nítida, GPS, guardar.
 2. **Offline:** modo avión, registrar el acta de prefectura, quitar modo avión y ver cómo se sincroniza.
@@ -45,6 +45,7 @@ Antes: correr `npm run test:rules` una vez, abrir la app en el teléfono, llamar
 
 - Por qué las reglas no son filtros y cada consulta lleva el filtro de la regla.
 - Por qué el acta tiene ID `{jrvId}_{dignidad}` (una por mesa y dignidad; reintentos idempotentes).
-- Por qué el login devuelve un custom token (no exponer correos) y por qué hace falta el rol Token Creator.
-- Por qué cambiar la contraseña revoca la sesión y la app vuelve a iniciarla.
+- Por qué se pasó al plan gratuito (ADR-018) y qué riesgos trae: cuentas de Auth sin perfil (no tienen permisos) y el correo visible para quien conozca una cédula.
+- Cómo se crea una cuenta sin Functions: instancia secundaria de Auth y un lote que las reglas validan por jerarquía.
+- Por qué la foto va en el mismo lote que el acta (atómico y funciona sin red).
 - Por qué `inject()` va antes del `await` y por qué el `effect` usa `untracked`.

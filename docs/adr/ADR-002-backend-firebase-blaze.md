@@ -1,6 +1,6 @@
 # ADR-002: Usar Firebase en plan Blaze como backend
 
-**Estado:** Aceptado (reemplaza la propuesta inicial de Supabase registrada en `docs/PLAN.md` el 21-nov)
+**Estado:** Reemplazado por [ADR-018](ADR-018-firebase-spark-sin-functions.md) (el plan Blaze exigía un cobro que no fue posible). Antes reemplazó la propuesta inicial de Supabase.
 **Fecha:** 2026-11-23
 **Autor(es) y equipo:** Jimy Lucero San Lucas · Grupo 5
 **Requisitos relacionados:** R8 (backend, reglas por rol y pertenencia, persistencia de datos e imágenes), R3 (no exponer claves administrativas), R10.

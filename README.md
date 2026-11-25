@@ -22,7 +22,7 @@ No hay autorregistro. Todos inician sesión con su **cédula** y la contraseña 
 |---|---|
 | App | Ionic 9 + Angular 22 (standalone, signals), TypeScript 6 |
 | Nativo | Capacitor 8 (Android): `@capacitor/camera`, `@capacitor/geolocation`, `@capacitor/network` |
-| Backend | Firebase 13 (plan Blaze, `us-central1`): Authentication, Firestore, Storage, Cloud Functions (Node 22, `firebase-functions` 7) |
+| Backend | Firebase 13 en el **plan gratuito Spark**: Authentication y Firestore (sin Cloud Functions ni Storage, [ADR-018](docs/adr/ADR-018-firebase-spark-sin-functions.md)) |
 | Gráficos | Chart.js 4 |
 | Pruebas | Vitest, `@firebase/rules-unit-testing`, emuladores de Firebase |
 | Diseño | IBM Carbon ([DESIGN.md](DESIGN.md)), IBM Plex vía fontsource |
@@ -41,23 +41,19 @@ flowchart LR
     F --> C
     DA --> C
   end
-  subgraph Firebase
-    A[Auth + custom claims]
-    FS[(Firestore<br/>firestore.rules)]
-    ST[(Storage<br/>storage.rules)]
-    FN[Cloud Functions<br/>cuentas, login, auditoría]
+  subgraph Firebase["Firebase (plan gratuito Spark)"]
+    A[Authentication]
+    FS[(Firestore<br/>actas, fotos, usuarios<br/>firestore.rules)]
   end
   C --> A
+  C --> FS
   DA --> FS
-  DA --> ST
-  C --> FN
-  FN --> A
-  FN --> FS
+  DA --> A
 ```
 
 - Las páginas no importan Firebase: hablan con stores, que usan repositorios ([ADR-003](docs/adr/ADR-003-arquitectura-por-capas.md)).
-- La autorización real está en las reglas de Firestore y Storage; los guards solo mejoran la navegación ([ADR-005](docs/adr/ADR-005-modelo-firestore-y-reglas.md)).
-- Las operaciones de administrador (crear cuentas, roles, login por cédula) corren en Cloud Functions: el APK no contiene claves administrativas ([ADR-004](docs/adr/ADR-004-autenticacion-cedula-claims-functions.md)).
+- La autorización real está en `firestore.rules`; los guards solo mejoran la navegación ([ADR-005](docs/adr/ADR-005-modelo-firestore-y-reglas.md)).
+- Sin Cloud Functions (plan gratuito): la app del coordinador crea las cuentas y las reglas validan la jerarquía; el rol vive en `usuarios/{uid}`. El APK no contiene claves administrativas ([ADR-018](docs/adr/ADR-018-firebase-spark-sin-functions.md)).
 
 ```
 src/app/
@@ -65,7 +61,7 @@ src/app/
   domain/     models.ts, cedula.validator.ts, acta.rules.ts, nitidez.ts, geo.ts, usuario.rules.ts
   data/       *.repository.ts, foto.service.ts, ubicacion.service.ts, red.service.ts, cola-fotos.service.ts
   features/   auth/, veedor/, actas/, recinto/, provincial/, usuarios/, shared/
-functions/src/  usuarios.ts, auditoria.ts, shared/
+functions/src/  diseño anterior con Cloud Functions (plan Blaze); no se despliega
 seed/           seed.mjs
 tests/          rules/reglas.spec.ts, integracion/cuentas.mjs
 ```
@@ -79,17 +75,19 @@ tests/          rules/reglas.spec.ts, integracion/cuentas.mjs
 | `organizaciones` | `o1`..`o5` | nombre, siglas, lista |
 | `candidatos` | `{organizacionId}_{dignidad}` | organizacionId, dignidad (ALCALDE, PREFECTO), nombre |
 | `usuarios` | uid | cedula, nombres, apellidos, telefono, email, rol, recintoId, debeCambiarPassword |
-| `cedulas` | cédula | uid (índice privado, solo Functions) |
-| `actas` | `{jrvId}_{dignidad}` | votos {o1..o5}, nulos, blancos, totalSufragantes, fotoPath, ubicacion {lat, lng, precisionM}, estado, version, registradoPor, updatedBy |
+| `cedulas` | cédula | uid, email (índice para el login; se consulta por ID, no se lista) |
+| `actas` | `{jrvId}_{dignidad}` | votos {o1..o5}, nulos, blancos, totalSufragantes, fotoPath (`fotos/...`), ubicacion {lat, lng, precisionM}, estado, version, registradoPor, updatedBy |
+| `fotos` | `{actaId}_{uuid}` | actaId, jrvId, recintoId, dignidad, mime (image/jpeg), imagen (base64, menos de 700 KB), bytes, creadoPor |
 | `auditoria` | automático | actaId, recintoId, usuario, accion, antes, despues, fecha |
 
-Fotos en Storage: `actas/{recintoId}/{jrvId}/{dignidad}-{uuid}.jpg` (JPEG, menos de 2 MB, sin sobrescribir).
+Las fotos se guardan en Firestore (no hay Storage en el plan gratuito), con las mismas reglas por mesa que las actas, y nunca se sobrescriben.
 
 ## Seguridad (resumen)
 
-- El veedor solo lee y escribe las mesas y actas que tiene asignadas; el coordinador de recinto, solo su recinto; el provincial lee todo y no escribe actas.
+- El veedor solo lee y escribe las mesas, actas y fotos que tiene asignadas; el coordinador de recinto, solo su recinto; el provincial lee todo y no escribe actas.
 - El servidor valida que los votos sean enteros no negativos, que **votos + nulos + blancos = total de sufragantes**, la versión del acta (conflictos) y que nadie falsifique su rol, su recinto o el autor.
-- Los roles viajan como custom claims que solo pone la Function `crearUsuario`.
+- El rol está en `usuarios/{uid}`. Solo un coordinador puede crear perfiles, por jerarquía; nadie puede crearse el suyo ni cambiar su rol. Una cuenta de Auth sin perfil no tiene ningún permiso.
+- Riesgos aceptados y documentados en ADR-018: quien conozca una cédula registrada puede ver el correo asociado, y el algoritmo módulo 10 de la cédula se valida en la app (el servidor exige 10 dígitos y cédula única).
 - La configuración web de Firebase (`apiKey`, `projectId`) es pública por diseño; ningún secreto está en el repositorio.
 
 ## Instalación y configuración
@@ -98,15 +96,13 @@ Requisitos: Node 22, JDK 21, Android SDK, Firebase CLI (`npm install -g firebase
 
 ```powershell
 npm install
-npm --prefix functions install
 ```
 
 1. **App:** `src/environments/environment.ts` y `environment.prod.ts` contienen la configuración web del proyecto Firebase. Para otro proyecto, copia [environment.example.ts](src/environments/environment.example.ts) y completa los valores de la consola de Firebase. En desarrollo `useEmulators: true` conecta la app a los emuladores locales.
-2. **Functions:** copia `functions/.env.example` a `functions/.env.<id-del-proyecto>` y pon la `WEB_API_KEY` (la `apiKey` web). No se versiona.
-3. **Consola de Firebase (una vez):** plan Blaze con alerta de presupuesto, Firestore y Storage en `us-central1`, proveedor Correo/contraseña activado, plantillas de correo en español. En Google Cloud IAM, rol **Service Account Token Creator** para la cuenta de servicio de las Functions (lo necesita el login por cédula).
-4. **Deploy:**
+2. **Consola de Firebase (una vez, plan gratuito Spark, sin tarjeta):** crear Firestore, activar el proveedor Correo/contraseña y poner en español las plantillas de correo (verificación y restablecimiento).
+3. **Deploy** (solo reglas e índices):
 ```powershell
-firebase deploy --project elecciones-epn --only firestore:rules,firestore:indexes,storage,functions
+firebase deploy --project elecciones-epn --only firestore:rules,firestore:indexes
 ```
 
 ## Ejecución local con emuladores
@@ -115,7 +111,7 @@ En esta PC el emulador de Firestore necesita la variable de abajo (la carpeta te
 
 ```powershell
 $env:JAVA_TOOL_OPTIONS="-Djdk.net.unixdomain.tmpdir=C:\Users\Public"
-firebase emulators:start --project elecciones-epn --only auth,firestore,functions,storage
+firebase emulators:start --project elecciones-epn --only auth,firestore
 ```
 
 En otra terminal, datos iniciales (R1) y cuentas de demostración:
@@ -144,17 +140,16 @@ Son cédulas generadas con el algoritmo de verificación; no pertenecen a person
 
 ## Pruebas
 
-| Qué | Comando | Resultado al 23-nov |
+| Qué | Comando | Resultado al 24-nov |
 |---|---|---|
 | Unitarias (reglas de negocio y guards) | `npm run test:unit` | 41 pruebas |
-| Reglas de seguridad (aislamiento del veedor, validaciones, Storage) | `npm run test:rules` | 30 pruebas |
-| Integración de cuentas y acceso (Functions) | ver abajo | 13 casos |
+| Reglas de seguridad (aislamiento del veedor, validaciones, fotos, alta de cuentas, auditoría) | `npm run test:rules` | 45 pruebas |
+| Integración de cuentas y acceso (Auth + Firestore) | ver abajo | 13 casos |
 | E2E de humo en navegador móvil (Playwright, Pixel 7) | `npm run test:e2e` | 4 pruebas |
 | Lint | `npx ng lint --max-warnings 0` | sin errores |
 
 ```powershell
-npm --prefix functions run build
-firebase emulators:exec --project demo-elecciones-epn --only auth,firestore,functions "node seed/seed.mjs --demo && node tests/integracion/cuentas.mjs"
+firebase emulators:exec --project demo-elecciones-epn --only auth,firestore "node seed/seed.mjs --demo && node tests/integracion/cuentas.mjs"
 ```
 
 Prueba en dispositivo: [docs/setup/PRUEBA-TELEFONO.md](docs/setup/PRUEBA-TELEFONO.md).
@@ -172,7 +167,7 @@ Salida: `android\app\build\outputs\apk\debug\app-debug.apk`. El APK de entrega e
 
 ## Sin conexión
 
-El veedor puede registrar actas en modo avión: Firestore guarda la escritura en el teléfono y la envía al volver la red; las fotos esperan en una cola local y se suben solas. Si otra persona corrigió la misma acta mientras tanto, gana la versión del servidor ([ADR-010](docs/adr/ADR-010-offline-cache-y-cola-de-fotos.md)).
+El veedor puede registrar actas en modo avión: el acta, su foto y su registro de auditoría van en un solo lote que Firestore guarda en el teléfono y envía al volver la red. Si otra persona corrigió la misma acta mientras tanto, gana la versión del servidor ([ADR-010](docs/adr/ADR-010-offline-cache-y-cola-de-fotos.md)).
 
 ## Uso de inteligencia artificial
 

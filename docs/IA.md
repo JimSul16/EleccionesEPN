@@ -8,7 +8,7 @@ Requisito: sección 7 del enunciado (declarar herramientas, mostrar instruccione
 
 | Herramienta | Rol en el proyecto | Qué hizo |
 |---|---|---|
-| Claude Code (modelo Claude Opus) | Arquitectura, lógica, datos, seguridad, pruebas, documentación | Plan, `domain/`, `data/`, `core/`, stores y páginas, reglas de Firestore y Storage, Cloud Functions, seed, pruebas, ADR, README |
+| Claude Code (modelo Claude Opus) | Arquitectura, lógica, datos, seguridad, pruebas, documentación | Plan, `domain/`, `data/`, `core/`, stores y páginas, reglas de Firestore y Storage, Cloud Functions (luego reemplazadas por el plan gratuito, ADR-018), seed, pruebas, ADR, README |
 | OpenCode | Interfaz | Tokens de diseño Carbon, estilo de las pantallas de acceso, capturas responsive |
 | Antigravity | Setup y assets | Scaffold de Ionic y Capacitor, instalación de librerías, `firebase init`, emuladores, APK, ícono, splash, SVG, Lottie |
 | Skills de apoyo | Calidad de diseño | `impeccable` (detector de diseño genérico), `ui-ux-pro-max`, `design-taste-frontend`, `playwright-cli` |
@@ -31,6 +31,8 @@ Cada agente trabajó en su propia rama y carpeta; solo se unió a `main` lo que 
 |---|---|---|
 | Supabase como backend (plan inicial) | **Descartada** | El grupo eligió Firebase; se documentó el riesgo de Blaze en ADR-002 |
 | Combinar Firebase con Supabase para no pagar Storage | **Descartada** | No evita Blaze (las Functions lo exigen) y parte la seguridad en dos sistemas |
+| Cloudinary para las fotos cuando Blaze pidió 30 USD | **Descartada** | Tampoco evitaba Blaze (las Functions lo exigían) y sus subidas con preset público no se pueden restringir por mesa |
+| Pasar al plan gratuito Spark: fotos en Firestore y cuentas creadas desde la app con reglas | **Aceptada** | Costo cero manteniendo la seguridad por mesa en reglas; se declaran sus riesgos en ADR-018 |
 | Login con una callable que devuelve el correo de una cédula | **Descartada** | Permite enumerar cédulas y correos; se usó custom token (ADR-004) |
 | Cola offline propia para todo | **Descartada** | La caché del SDK de Firestore ya encola las escrituras; solo las fotos necesitan cola (ADR-010) |
 | Tailwind y el skill `ui-styling` | **Descartados** | Duplican el theming de Ionic (ADR-013) |
@@ -51,6 +53,7 @@ Ninguno de estos errores lo detectó la IA al escribir el código: aparecieron a
 | 4 | Error 400: Firestore admite como máximo 5 agregaciones por consulta y se pedían 9 | Respuesta del servidor en la pestaña de red | Dos consultas en paralelo | Totales verificados a mano: 2542 + 56 + 48 = 2646 |
 | 5 | Dependencia errónea `"elecciones-epn": "file:.."` en Functions (introducida por un agente) | Revisión de las ramas antes de unir | Se quitó y se restauró el lock | Compilación de Functions y prueba de integración |
 | 6 | Prueba de Storage fallaba (23/24) por usar otro ID de proyecto en el emulador | Reporte de Antigravity | `test:rules` con `--project demo-elecciones-epn` | 30/30 |
+| 7 | Tras el cambio a Spark, el provincial no podía asignar coordinador a los recintos del seed: las reglas comparaban un campo `coordinadorId` que no existía | Prueba de integración (`cuentas.mjs`) | `get('coordinadorId', null)` en las reglas y `coordinadorId: null` en el seed | 13/13 y 45/45 |
 
 Además: un caso de prueba decía verificar la auditoría pero no la comprobaba; se corrigió para consultar la colección `auditoria`.
 
@@ -58,7 +61,7 @@ Además: un caso de prueba decía verificar la auditoría pero no la comprobaba;
 
 - APIs y versiones consultadas en la fuente antes de usarlas: tipos instalados de `@capacitor/camera` y `@capacitor/geolocation` (así se vio que `getPhoto` está deprecada), documentación oficial de Firebase sobre Blaze, `npm view` para cada paquete.
 - Cédulas de prueba generadas con el algoritmo, no inventadas.
-- Tres niveles de pruebas automáticas (41 unitarias, 30 de reglas, 13 de integración) y prueba manual en el navegador de los tres roles.
+- Cuatro niveles de pruebas automáticas (41 unitarias, 45 de reglas, 13 de integración, 4 E2E) y prueba manual en el navegador de los tres roles.
 - Prueba en el teléfono: [setup/PRUEBA-TELEFONO.md](setup/PRUEBA-TELEFONO.md).
 
 ## 6. Límites reconocidos

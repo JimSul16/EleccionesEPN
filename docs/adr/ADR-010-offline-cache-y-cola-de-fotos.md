@@ -1,6 +1,6 @@
 # ADR-010: Soportar trabajo sin conexión con la caché de Firestore y una cola de fotos
 
-**Estado:** Aceptado (componente opcional con bonificación)
+**Estado:** Aceptado (componente opcional con bonificación). Actualizado por [ADR-018](ADR-018-firebase-spark-sin-functions.md): la foto viaja en el mismo lote que el acta, así que Firestore encola ambas y la cola de fotos en IndexedDB se eliminó.
 **Fecha:** 2026-11-23
 **Autor(es) y equipo:** Jimy Lucero San Lucas · Grupo 5
 **Requisitos relacionados:** R10 (persistencia local, sincronización automática al recuperar conexión, estrategia de conflictos documentada).

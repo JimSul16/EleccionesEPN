@@ -7,9 +7,9 @@ Las propuestas se registraron en [docs/PLAN.md](../PLAN.md) y [docs/PLAN-AGENTES
 | ADR | Decisión | Requisitos |
 |---|---|---|
 | [001](ADR-001-ionic-angular-standalone.md) | Ionic Angular standalone | R9, condiciones técnicas |
-| [002](ADR-002-backend-firebase-blaze.md) | Firebase en plan Blaze | R8 |
+| [002](ADR-002-backend-firebase-blaze.md) | Firebase en plan Blaze (**reemplazado por 018**) | R8 |
 | [003](ADR-003-arquitectura-por-capas.md) | Capas core / domain / data / features | R9 |
-| [004](ADR-004-autenticacion-cedula-claims-functions.md) | Login por cédula, custom claims y Cloud Functions | R2, R3 |
+| [004](ADR-004-autenticacion-cedula-claims-functions.md) | Login por cédula, custom claims y Cloud Functions (**reemplazado por 018**) | R2, R3 |
 | [005](ADR-005-modelo-firestore-y-reglas.md) | Modelo Firestore + Storage y reglas por rol y pertenencia | R1, R8 |
 | [006](ADR-006-estado-signals-y-navegacion.md) | Estado con signals y stores por pantalla; guards | R9 |
 | [007](ADR-007-validacion-formularios-y-reglas-de-acta.md) | Reactive Forms + reglas puras validadas también en servidor | R2, R6 |
@@ -23,3 +23,4 @@ Las propuestas se registraron en [docs/PLAN.md](../PLAN.md) y [docs/PLAN-AGENTES
 | [015](ADR-015-coordinacion-multiagente-worktrees.md) | Coordinación de agentes de IA con ramas y worktrees | Uso de IA |
 | [016](ADR-016-sin-webgpu.md) | No usar WebGPU / Three.js | R9 |
 | [017](ADR-017-graficos-dashboard-chartjs.md) | Chart.js con color neutro y tabla accesible | R4 |
+| [018](ADR-018-firebase-spark-sin-functions.md) | **Firebase gratuito (Spark): sin Functions ni Storage**; reemplaza 002 y 004 | R2, R3, R7, R8, R10 |

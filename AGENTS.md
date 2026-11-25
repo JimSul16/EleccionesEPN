@@ -3,7 +3,7 @@
 Lo leen Claude Code (vía CLAUDE.md), OpenCode y Antigravity. Todo lo que hagan es uso de IA y se declara en [docs/IA.md](docs/IA.md).
 
 ## Proyecto
-App móvil de control electoral (Prueba 2, Aplicaciones Móviles, ESFOT). Ionic Angular 22 standalone + Capacitor 8 (Android) + Firebase (Auth, Firestore, Storage, Cloud Functions) en plan Blaze.
+App móvil de control electoral (Prueba 2, Aplicaciones Móviles, ESFOT). Ionic Angular 22 standalone + Capacitor 8 (Android) + Firebase en el plan gratuito Spark: solo Auth y Firestore (ADR-018; Storage y Functions no se usan).
 Planes: [docs/PLAN.md](docs/PLAN.md), [docs/PLAN-AGENTES.md](docs/PLAN-AGENTES.md). Tablero: [docs/agents/BOARD.md](docs/agents/BOARD.md). Decisiones: [docs/adr/](docs/adr/). Diseño: [DESIGN.md](DESIGN.md).
 
 ## Ramas y carpetas
@@ -15,7 +15,7 @@ Planes: [docs/PLAN.md](docs/PLAN.md), [docs/PLAN-AGENTES.md](docs/PLAN-AGENTES.m
 ## Quién toca qué
 | Dueño | Archivos |
 |---|---|
-| Claude | `src/app/**/*.ts`, `firestore.rules`, `storage.rules`, `firestore.indexes.json`, `functions/src/`, `seed/`, `tests/`, `docs/adr/`, README |
+| Claude | `src/app/**/*.ts`, `firestore.rules`, `storage.rules`, `firestore.indexes.json`, `seed/`, `tests/`, `docs/adr/`, README |
 | OpenCode | `src/app/**/*.html`, `src/app/**/*.scss`, `src/theme/` (salvo `motion.scss`) |
 | Antigravity | `package.json` y locks, `angular.json`, `capacitor.config.ts`, `firebase.json`, `android/`, `functions/package.json`, `src/assets/`, `resources/`, `src/theme/motion.scss` |
 
@@ -34,5 +34,5 @@ npm run test:unit
 npm run test:rules
 npx ng build
 ```
-Integración de cuentas: `firebase emulators:exec --project demo-elecciones-epn --only auth,firestore,functions "node seed/seed.mjs --demo && node tests/integracion/cuentas.mjs"`.
+Integración de cuentas: `firebase emulators:exec --project demo-elecciones-epn --only auth,firestore "node seed/seed.mjs --demo && node tests/integracion/cuentas.mjs"`.
 En esta PC los emuladores necesitan `JAVA_TOOL_OPTIONS=-Djdk.net.unixdomain.tmpdir=C:\Users\Public` ([docs/setup/EMULADORES.md](docs/setup/EMULADORES.md)).

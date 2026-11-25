@@ -17,7 +17,7 @@ La foto debe tomarse desde la app (no de la galería), rechazarse si está borro
 | `getPhoto` (API clásica) | Ejemplos abundantes | Deprecada en la versión 8 |
 
 ## Decisión
-- Cámara: `Camera.takePhoto({ quality: 90, targetWidth/Height: 1600, correctOrientation: true, saveToGallery: false })`. Se recodifica como JPEG calidad 0,7 en un canvas (formato y tamaño garantizados para `storage.rules`).
+- Cámara: `Camera.takePhoto({ quality: 90, targetWidth/Height: 1600, correctOrientation: true, saveToGallery: false })`. Se recodifica como JPEG en un canvas, bajando resolución y calidad hasta quedar bajo 700 KB en base64 (se guarda en Firestore, ADR-018).
 - Nitidez: imagen reducida a 640 px, escala de grises, varianza del Laplaciano (`domain/nitidez.ts`). Umbral inicial `UMBRAL_NITIDEZ = 80`.
 - GPS: alta precisión con 15 s; si se agota, reintento de precisión normal con 20 s. Se guarda `lat`, `lng` y `precisionM`.
 - Errores mapeados por código (`OS-PLUG-CAMR-0003/0006/0007`, `OS-PLUG-GLOC-0003/0007/0009/0010`) a mensajes con instrucciones. Cancelar la cámara no es un error.

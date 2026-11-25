@@ -1,6 +1,6 @@
 # ADR-005: Modelar los datos en Firestore y autorizar con reglas por rol y pertenencia
 
-**Estado:** Aceptado
+**Estado:** Aceptado. Actualizado por [ADR-018](ADR-018-firebase-spark-sin-functions.md): roles en `usuarios/{uid}` en vez de claims, y fotos en la colección `fotos` de Firestore en vez de Storage.
 **Fecha:** 2026-11-23
 **Autor(es) y equipo:** Jimy Lucero San Lucas · Grupo 5
 **Requisitos relacionados:** R1 (datos iniciales), R5, R6, R8 (reglas por rol y pertenencia; un veedor no accede a mesas ajenas).
