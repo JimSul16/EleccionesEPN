@@ -1,14 +1,11 @@
 import { inject, Injectable } from '@angular/core';
 import {
   collection,
-  count,
   doc,
-  getAggregateFromServer,
   getDoc,
   onSnapshot,
   query,
   serverTimestamp,
-  sum,
   where,
   writeBatch,
   type DocumentSnapshot,
@@ -25,7 +22,6 @@ import {
   type ConteoActa,
   type Dignidad,
   type Ubicacion,
-  type Votos,
 } from '../domain/models';
 
 export interface DatosActa extends ConteoActa {
@@ -53,15 +49,6 @@ export interface FotoNueva {
 export interface ResultadoGuardado {
   sincronizada: boolean;
   confirmacion: Promise<void>;
-}
-
-/** Totales del dashboard (R4). */
-export interface TotalesVotos {
-  actas: number;
-  votos: Votos;
-  nulos: number;
-  blancos: number;
-  totalSufragantes: number;
 }
 
 const ESPERA_SERVIDOR_MS = 4000;
@@ -202,42 +189,6 @@ export class ActaRepository {
   async imagen(fotoPath: string): Promise<string | null> {
     const s = await getDoc(doc(this.fb.db, fotoPath));
     return s.exists() ? `data:${s.get('mime')};base64,${s.get('imagen')}` : null;
-  }
-
-  /**
-   * Suma de votos por organización para una dignidad, consolidado o por recinto.
-   * Se calcula en el servidor (consulta de agregación), no descargando las actas.
-   * Firestore admite como máximo 5 agregaciones por consulta, por eso son dos
-   * consultas en paralelo sobre el mismo filtro.
-   */
-  async totales(dignidad: Dignidad, recintoId?: string): Promise<TotalesVotos> {
-    const filtros = [where('dignidad', '==', dignidad)];
-    if (recintoId) filtros.push(where('recintoId', '==', recintoId));
-    const q = query(collection(this.fb.db, 'actas'), ...filtros);
-    const [a, b] = await Promise.all([
-      getAggregateFromServer(q, {
-        actas: count(),
-        o1: sum('votos.o1'),
-        o2: sum('votos.o2'),
-        o3: sum('votos.o3'),
-        o4: sum('votos.o4'),
-      }),
-      getAggregateFromServer(q, {
-        o5: sum('votos.o5'),
-        nulos: sum('nulos'),
-        blancos: sum('blancos'),
-        totalSufragantes: sum('totalSufragantes'),
-      }),
-    ]);
-    const x = a.data();
-    const y = b.data();
-    return {
-      actas: x.actas,
-      votos: { o1: x.o1, o2: x.o2, o3: x.o3, o4: x.o4, o5: y.o5 },
-      nulos: y.nulos,
-      blancos: y.blancos,
-      totalSufragantes: y.totalSufragantes,
-    };
   }
 
   private escuchar(q: Query): Observable<Acta[]> {
