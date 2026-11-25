@@ -1,1 +1,32 @@
-/* Estilos de la pantalla (OpenCode, T-010). Encapsulados en el componente. */
+// T-010c — Provincial: ubicaciones
+// La insignia "Lejos del recinto" debe destacar
+.ubicaciones ion-badge[color="warning"] {
+  background: var(--ion-color-warning);
+  color: var(--ion-color-warning-contrast);
+  font-weight: 600;
+  font-size: var(--app-text-xs);
+}
+
+/* Hacer que el badge "Lejos del recinto" sea más visible */
+.ubicaciones ion-item[lejos="true"] {
+  border-left: 3px solid var(--ion-color-warning);
+  margin-bottom: var(--app-space-2);
+}
+
+/* Texto de la ubicación */
+.ubicaciones .tabular {
+  color: var(--app-ink);
+  font-size: var(--app-text-sm);
+  font-family: var(--app-font-mono);
+}
+
+/* Nombre del recinto */
+.ubicaciones h2 {
+  font-size: var(--app-text-sm);
+  color: var(--app-ink);
+}
+
+ion-note[slot="end"] {
+  color: var(--app-ink-muted);
+  font-size: var(--app-text-xs);
+}

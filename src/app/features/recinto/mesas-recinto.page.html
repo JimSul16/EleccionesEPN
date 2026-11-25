@@ -10,11 +10,11 @@
 <ion-content class="ion-padding">
   <app-estado-red />
 
-  <ion-button expand="block" routerLink="/recinto/veedores/nuevo">Crear veedor</ion-button>
+  <ion-button expand="block" routerLink="/recinto/veedores/nuevo" class="crear-usuario">Crear veedor</ion-button>
 
   @if (store.avance(); as a) {
   <p class="tabular">Avance: {{ a.completas }} de {{ a.total }} mesas completas</p>
-  <ion-progress-bar [value]="a.total ? a.completas / a.total : 0" />
+  <ion-progress-bar class="barra-avance" [value]="a.total ? a.completas / a.total : 0" />
   } @if (store.errorAsignacion()) {
   <ion-text color="danger" role="alert"><p>{{ store.errorAsignacion() }}</p></ion-text>
   } @let v = store.vista(); @if (v.estado === 'cargando') {
@@ -25,13 +25,20 @@
   } @else if (v.estado === 'error') {
   <ion-text color="danger" role="alert"><p>{{ v.mensaje }}</p></ion-text>
   } @else { @if (v.veedores.length === 0) {
-  <p class="estado vacio">Aún no hay veedores en este recinto. Cree uno para poder asignar mesas.</p>
+  <div class="estado vacio" role="status">
+    <img src="assets/svg/estado-vacio.svg" alt="" aria-hidden="true" />
+    Aún no hay veedores en este recinto. Cree uno para poder asignar mesas.
+  </div>
   } @for (fila of v.filas; track fila.jrv.id) {
   <ion-card>
     <ion-card-header>
       <ion-card-title>Mesa {{ fila.jrv.numero }}</ion-card-title>
       <ion-card-subtitle>
-        <ion-badge [color]="etiquetaEstado[fila.estado].color">{{ etiquetaEstado[fila.estado].texto }}</ion-badge>
+        <ion-badge [color]="etiquetaEstado[fila.estado].color"
+        [class.etiqueta-sin-veedor]="fila.estado === 'SIN_VEEDOR'"
+        [class.etiqueta-pendiente]="fila.estado === 'PENDIENTE'"
+        [class.etiqueta-parcial]="fila.estado === 'PARCIAL'"
+        [class.etiqueta-completa]="fila.estado === 'COMPLETA'">{{ etiquetaEstado[fila.estado].texto }}</ion-badge>
       </ion-card-subtitle>
     </ion-card-header>
     <ion-card-content>

@@ -7,7 +7,7 @@
   </ion-toolbar>
 </ion-header>
 
-<ion-content class="ion-padding">
+<ion-content class="ion-padding mis-mesas">
   <app-estado-red />
   <p>Veedor: {{ auth.usuario()?.nombres }} {{ auth.usuario()?.apellidos }}</p>
 
@@ -20,6 +20,7 @@
   <ion-text color="danger" role="alert"><p>{{ v.mensaje }}</p></ion-text>
   } } } @case ('listo') { @if (store.vista(); as v) { @if (v.estado === 'listo') { @if (v.mesas.length === 0) {
   <div class="estado vacio" role="status">
+    <img src="assets/svg/estado-vacio.svg" alt="" aria-hidden="true" />
     <p>Todavía no tiene mesas asignadas. Su coordinador de recinto debe asignarle una JRV.</p>
   </div>
   } @for (m of v.mesas; track m.jrv.id) {

@@ -1,1 +1,62 @@
-/* Estilos de la pantalla (OpenCode, T-010). Encapsulados en el componente. */
+// T-010b — Recinto: mesas y crear usuario
+// Chips de estado de mesa con color Y texto, nunca solo color
+// Barra de avance clara
+.mesas-recinto .etiqueta-estado {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--app-space-1) var(--app-space-2);
+  font-size: var(--app-text-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: var(--app-tracking);
+  min-width: 80px;
+}
+
+/* Sin veedor - fondo amarillo con texto oscuro */
+.mesas-recinto .etiqueta-sin-veedor {
+  background: var(--ion-color-warning);
+  color: var(--ion-color-warning-contrast);
+}
+
+/* Pendiente - fondo naranja/amber con texto oscuro */
+.mesas-recinto .etiqueta-pendiente {
+  background: var(--ion-color-warning);
+  color: var(--ion-color-warning-contrast);
+}
+
+/* 1/2 actas - amarillo más claro */
+.mesas-recinto .etiqueta-parcial {
+  background: var(--ion-color-warning);
+  color: var(--ion-color-warning-contrast);
+}
+
+/* Completa - fondo verde con texto oscuro */
+.mesas-recinto .etiqueta-completa {
+  background: var(--ion-color-success);
+  color: var(--ion-color-success-contrast);
+}
+
+/* ---- Barra de avance ---- */
+.barra-avance {
+  margin: var(--app-space-3) 0;
+  --ion-progress-bar-background: var(--app-surface-1);
+  --ion-progress-bar-buffer: var(--ion-color-primary);
+  --ion-progress-bar-buffer-background: var(--app-surface-1);
+}
+
+/* Asegurar que el texto del avance sea legible */
+.barra-avance .tabular {
+  color: var(--app-ink);
+  font-weight: 600;
+}
+
+/* ---- Crear usuario ---- */
+.crear-usuario .ion-input {
+  --padding-start: var(--app-space-4);
+  --padding-end: var(--app-space-4);
+}
+
+.crear-usuario ion-button {
+  padding: var(--app-space-3) var(--app-space-6);
+  font-size: var(--app-text-lg);
+}
