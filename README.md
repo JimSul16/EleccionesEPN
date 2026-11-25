@@ -1,174 +1,239 @@
-# EleccionesEPN: control electoral móvil
+<div align="center">
+  <h1>🗳️ EleccionesEPN — Control Electoral Móvil</h1>
+  <p><em>Aplicación móvil para el registro, validación y supervisión en tiempo real de actas de escrutinio desde las Juntas Receptoras del Voto (JRV).</em></p>
 
-Aplicación móvil para que una organización política registre, valide y supervise los resultados del escrutinio desde las juntas receptoras del voto (JRV). Prueba 2 de Desarrollo de Aplicaciones Móviles, ESFOT, EPN.
+  <p>
+    <img src="https://img.shields.io/badge/Ionic_9-3880FF?style=for-the-badge&logo=ionic&logoColor=white" alt="Ionic 9" />
+    <img src="https://img.shields.io/badge/Angular_22-DD0031?style=for-the-badge&logo=angular&logoColor=white" alt="Angular 22" />
+    <img src="https://img.shields.io/badge/Capacitor_8-119EFF?style=for-the-badge&logo=capacitor&logoColor=white" alt="Capacitor 8" />
+    <img src="https://img.shields.io/badge/TypeScript_6-3178C6?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript 6" />
+    <img src="https://img.shields.io/badge/Firebase_Spark-FFCA28?style=for-the-badge&logo=firebase&logoColor=black" alt="Firebase Spark" />
+    <img src="https://img.shields.io/badge/Chart.js_4-FF6384?style=for-the-badge&logo=chartdotjs&logoColor=white" alt="Chart.js 4" />
+  </p>
 
-- **Autor:** Jimy Lucero San Lucas · Grupo 5
-- **APK:** [Release v1.0.0](PENDIENTE_ENLACE_RELEASE) (se publica el 25-nov)
-- **Decisiones de arquitectura:** [docs/adr/](docs/adr/) · **Uso de IA:** [docs/IA.md](docs/IA.md) · **Guía de defensa:** [docs/DEFENSA.md](docs/DEFENSA.md)
+  <p>
+    <strong>Prueba 2 · Desarrollo de Aplicaciones Móviles · ESFOT — EPN</strong><br/>
+    Autor: <strong>Jimy Lucero San Lucas</strong> · Grupo 5
+  </p>
 
-## Funcionalidad por rol
+  <p>
+    <a href="PENDIENTE_ENLACE_RELEASE">📦 APK Release v1.0.0 (25-nov)</a> ·
+    <a href="docs/adr/">📐 Decisiones (ADR)</a> ·
+    <a href="docs/IA.md">🤖 Uso de IA</a> ·
+    <a href="docs/DEFENSA.md">🎓 Guía de Defensa</a> ·
+    <a href="docs/setup/PRUEBA-TELEFONO.md">📱 Prueba en Teléfono</a>
+  </p>
+</div>
 
-| Rol | Puede |
+---
+
+## 📖 Descripción del Proyecto
+
+**EleccionesEPN** digitaliza el control electoral paralelo desde la mesa hasta la coordinación provincial, garantizando trazabilidad, integridad aritmética de los conteos y operación continua incluso sin cobertura de red.
+
+- **Sin autorregistro:** todas las cuentas se crean por jerarquía desde la propia aplicación y acceden con su **cédula** y la contraseña inicial `Ecuador2026` (con cambio obligatorio en el primer ingreso y recuperación por correo).
+- **Backend 100 % en el plan gratuito Firebase Spark:** utiliza únicamente **Firebase Authentication** y **Cloud Firestore**, sin Cloud Functions ni Cloud Storage ([ADR-018](docs/adr/ADR-018-firebase-spark-sin-functions.md)).
+- **Seguridad declarativa en el servidor:** toda la autorización por rol y pertenencia a recinto o mesa recae en [`firestore.rules`](firestore.rules), no en ocultar vistas.
+
+---
+
+## ✨ Funcionalidad por Rol
+
+| Rol | Responsabilidades y capacidades |
 |---|---|
-| Coordinador provincial | Listar y crear recintos (con sus JRV), crear el coordinador de cada recinto, ver el avance de actas, las ubicaciones GPS (con alerta de actas lejos de su recinto) y el dashboard de votos por candidatura, por dignidad y por recinto o consolidado |
-| Coordinador de recinto | Ver las mesas de su recinto y su estado, crear veedores, asignar y reasignar veedores a mesas, corregir datos y fotos de las actas |
-| Veedor | Ver solo sus mesas, registrar el acta de alcaldía y de prefectura (5 organizaciones, nulos, blancos, total), con validación de totales en vivo, foto con control de nitidez y GPS; corregir sus actas; trabajar sin conexión |
+| **🏛️ Coordinador Provincial** | Lista y crea recintos electorales con sus JRV, crea y asigna coordinadores de recinto, monitorea el avance global y por recinto, revisa ubicaciones GPS (con alertas cuando un acta se registra lejos de su recinto) y consulta el dashboard de votos por dignidad y ámbito. |
+| **🏫 Coordinador de Recinto** | Supervisa las mesas (JRV) y el estado de avance de su recinto asignado, crea cuentas de veedores, asigna o reasigna veedores a mesas y corrige datos o fotografías de actas (generando nueva versión auditada). |
+| **📋 Veedor de Mesa** | Visualiza únicamente sus mesas asignadas y registra actas de **Alcaldía** y **Prefectura** (5 organizaciones políticas, votos nulos, blancos y total de sufragantes) con cuadre en vivo, foto validada por nitidez, captura GPS, correcciones y trabajo sin conexión. |
 
-No hay autorregistro. Todos inician sesión con su **cédula** y la contraseña inicial **Ecuador2026**, que deben cambiar en el primer acceso. La recuperación de contraseña es por correo.
+### Características Técnicas Clave
+- 🧮 **Validación Aritmética en Vivo y en Servidor:** exige que `votos válidos + nulos + blancos == total de sufragantes` antes de habilitar el guardado y lo vuelve a verificar en `firestore.rules`.
+- 📷 **Filtro de Nitidez Laplaciano:** evalúa la varianza del kernel Laplaciano en el dispositivo (`src/app/domain/nitidez.ts`) para rechazar actas borrosas antes de comprimirlas (< 700 KB en base64).
+- 📍 **Trazabilidad Geográfica:** captura coordenadas con `@capacitor/geolocation` y señala actas registradas fuera del radio esperado del recinto.
+- 📵 **Modo Offline Atómico:** el acta, su fotografía comprimida y su registro de auditoría viajan en un solo `writeBatch` que Firestore encola en IndexedDB sin conexión y sincroniza al volver la red, con control optimista de versión ante conflictos ([ADR-010](docs/adr/ADR-010-offline-cache-y-cola-de-fotos.md)).
+- 🎨 **Sistema de Diseño Sobrio:** basado en IBM Carbon y tipografía IBM Plex ([DESIGN.md](DESIGN.md)), sin colores asociados a organizaciones políticas.
 
-## Stack
+---
 
-| Capa | Tecnología |
-|---|---|
-| App | Ionic 9 + Angular 22 (standalone, signals), TypeScript 6 |
-| Nativo | Capacitor 8 (Android): `@capacitor/camera`, `@capacitor/geolocation`, `@capacitor/network` |
-| Backend | Firebase 13 en el **plan gratuito Spark**: Authentication y Firestore (sin Cloud Functions ni Storage, [ADR-018](docs/adr/ADR-018-firebase-spark-sin-functions.md)) |
-| Gráficos | Chart.js 4 |
-| Pruebas | Vitest, `@firebase/rules-unit-testing`, emuladores de Firebase |
-| Diseño | IBM Carbon ([DESIGN.md](DESIGN.md)), IBM Plex vía fontsource |
-
-## Arquitectura
+## 🏗️ Arquitectura del Sistema
 
 ```mermaid
 flowchart LR
-  subgraph App["App Ionic (Capacitor)"]
-    F["features/<br/>páginas por rol + stores (signals)"]
-    D["domain/<br/>reglas puras: cédula, acta, nitidez, geo"]
-    DA["data/<br/>repositorios, foto, GPS, red, cola offline"]
-    C["core/<br/>Firebase, sesión, guards, errores"]
+  subgraph App["App Móvil (Ionic 9 + Angular 22 + Capacitor 8)"]
+    F["features/<br/>Páginas por rol + Stores (Signals)"]
+    D["domain/<br/>Reglas puras: cédula, acta, nitidez, geo"]
+    DA["data/<br/>Repositorios, cámara, GPS y red"]
+    C["core/<br/>Firebase, AuthService, guards, errores"]
     F --> D
     F --> DA
     F --> C
     DA --> C
   end
-  subgraph Firebase["Firebase (plan gratuito Spark)"]
-    A[Authentication]
-    FS[(Firestore<br/>actas, fotos, usuarios<br/>firestore.rules)]
+
+  subgraph Firebase["Firebase (Plan Gratuito Spark)"]
+    A["Authentication<br/>Login por correo, cambio y reset"]
+    FS[("Cloud Firestore<br/>actas, fotos, usuarios, auditoría<br/>+ firestore.rules")]
   end
+
   C --> A
   C --> FS
   DA --> FS
   DA --> A
 ```
 
-- Las páginas no importan Firebase: hablan con stores, que usan repositorios ([ADR-003](docs/adr/ADR-003-arquitectura-por-capas.md)).
-- La autorización real está en `firestore.rules`; los guards solo mejoran la navegación ([ADR-005](docs/adr/ADR-005-modelo-firestore-y-reglas.md)).
-- Sin Cloud Functions (plan gratuito): la app del coordinador crea las cuentas y las reglas validan la jerarquía; el rol vive en `usuarios/{uid}`. El APK no contiene claves administrativas ([ADR-018](docs/adr/ADR-018-firebase-spark-sin-functions.md)).
+- **Capas desacopladas ([ADR-003](docs/adr/ADR-003-arquitectura-por-capas.md)):** las páginas y stores no importan el SDK de Firebase directamente; delegan en `data/` y `core/`.
+- **Jerarquía sin servidor custom ([ADR-018](docs/adr/ADR-018-firebase-spark-sin-functions.md)):** las cuentas nuevas se crean mediante una instancia secundaria en memoria de Firebase Auth (`crearAuthSecundaria()`), mientras Firestore valida en lote que solo un superior autorizado cree el perfil y su índice en `cedulas/{cédula}`.
 
+### Estructura del Repositorio
+
+```text
+EleccionesEPN/
+├── src/
+│   ├── app/
+│   │   ├── core/        # Inicialización Firebase, autenticación, guards y manejo de errores
+│   │   ├── domain/      # Modelos, validador de cédula (módulo 10), reglas de acta, nitidez y geo
+│   │   ├── data/        # Repositorios Firestore, foto, geolocalización y estado de red
+│   │   └── features/    # Pantallas por rol (auth, provincial, recinto, veedor, actas, usuarios)
+│   ├── assets/          # Recursos gráficos e ilustraciones de estado
+│   ├── environments/    # Configuración Firebase de emulador y producción
+│   └── theme/           # Tokens IBM Carbon, variables Ionic y movimiento reducido
+├── firestore.rules      # Autorización y validación de integridad en servidor
+├── firestore.indexes.json
+├── seed/                # Script idempotente de carga inicial y datos demo (seed.mjs)
+├── tests/               # Pruebas de reglas (@firebase/rules-unit-testing) e integración
+├── e2e/                 # Pruebas de humo móviles con Playwright
+├── functions/           # Referencia histórica del diseño anterior en Blaze (no se despliega)
+└── docs/                # ADRs (001–018), planificación, guías de setup, IA.md y DEFENSA.md
 ```
-src/app/
-  core/       firebase.ts, auth.service.ts, guards.ts, errores.ts
-  domain/     models.ts, cedula.validator.ts, acta.rules.ts, nitidez.ts, geo.ts, usuario.rules.ts
-  data/       *.repository.ts, foto.service.ts, ubicacion.service.ts, red.service.ts, cola-fotos.service.ts
-  features/   auth/, veedor/, actas/, recinto/, provincial/, usuarios/, shared/
-functions/src/  diseño anterior con Cloud Functions (plan Blaze); no se despliega
-seed/           seed.mjs
-tests/          rules/reglas.spec.ts, integracion/cuentas.mjs
-```
 
-## Modelo de datos
+---
 
-| Colección (Firestore) | ID | Campos principales |
+## 🗄️ Modelo de Datos (Firestore)
+
+| Colección | ID del Documento | Campos Principales |
 |---|---|---|
-| `recintos` | automático | provincia, canton, parroquia, nombre, numJrv, lat, lng, coordinadorId |
-| `jrv` | `{recintoId}_{numero}` | recintoId, numero, veedorId |
-| `organizaciones` | `o1`..`o5` | nombre, siglas, lista |
-| `candidatos` | `{organizacionId}_{dignidad}` | organizacionId, dignidad (ALCALDE, PREFECTO), nombre |
-| `usuarios` | uid | cedula, nombres, apellidos, telefono, email, rol, recintoId, debeCambiarPassword |
-| `cedulas` | cédula | uid, email (índice para el login; se consulta por ID, no se lista) |
-| `actas` | `{jrvId}_{dignidad}` | votos {o1..o5}, nulos, blancos, totalSufragantes, fotoPath (`fotos/...`), ubicacion {lat, lng, precisionM}, estado, version, registradoPor, updatedBy |
-| `fotos` | `{actaId}_{uuid}` | actaId, jrvId, recintoId, dignidad, mime (image/jpeg), imagen (base64, menos de 700 KB), bytes, creadoPor |
-| `auditoria` | automático | actaId, recintoId, usuario, accion, antes, despues, fecha |
+| `recintos` | Automático | `provincia`, `canton`, `parroquia`, `nombre`, `numJrv`, `lat`, `lng`, `coordinadorId` |
+| `jrv` | `{recintoId}_{numero}` | `recintoId`, `numero`, `veedorId` |
+| `organizaciones` | `o1`..`o5` | `nombre`, `siglas`, `lista` |
+| `candidatos` | `{organizacionId}_{dignidad}` | `organizacionId`, `dignidad` (`ALCALDE` / `PREFECTO`), `nombre` |
+| `usuarios` | `uid` | `cedula`, `nombres`, `apellidos`, `telefono`, `email`, `rol`, `recintoId`, `debeCambiarPassword` |
+| `cedulas` | `cedula` | `uid`, `email` (índice consultable por ID para login, sin listado) |
+| `actas` | `{jrvId}_{dignidad}` | `votos {o1..o5}`, `nulos`, `blancos`, `totalSufragantes`, `fotoPath`, `ubicacion`, `estado`, `version`, `registradoPor`, `updatedBy` |
+| `fotos` | `{actaId}_{uuid}` | `actaId`, `jrvId`, `recintoId`, `dignidad`, `mime`, `imagen` (JPEG base64 < 700 KB), `bytes`, `creadoPor` |
+| `auditoria` | Automático | `actaId`, `recintoId`, `usuario`, `accion`, `version`, `antes`, `despues`, `fecha` |
 
-Las fotos se guardan en Firestore (no hay Storage en el plan gratuito), con las mismas reglas por mesa que las actas, y nunca se sobrescriben.
+---
 
-## Seguridad (resumen)
+## 🛡️ Seguridad
 
-- El veedor solo lee y escribe las mesas, actas y fotos que tiene asignadas; el coordinador de recinto, solo su recinto; el provincial lee todo y no escribe actas.
-- El servidor valida que los votos sean enteros no negativos, que **votos + nulos + blancos = total de sufragantes**, la versión del acta (conflictos) y que nadie falsifique su rol, su recinto o el autor.
-- El rol está en `usuarios/{uid}`. Solo un coordinador puede crear perfiles, por jerarquía; nadie puede crearse el suyo ni cambiar su rol. Una cuenta de Auth sin perfil no tiene ningún permiso.
-- Riesgos aceptados y documentados en ADR-018: quien conozca una cédula registrada puede ver el correo asociado, y el algoritmo módulo 10 de la cédula se valida en la app (el servidor exige 10 dígitos y cédula única).
-- La configuración web de Firebase (`apiKey`, `projectId`) es pública por diseño; ningún secreto está en el repositorio.
+- **Aislamiento estricto:** el veedor solo lee y escribe las mesas, actas y fotos asignadas a su `uid`; el coordinador de recinto opera exclusivamente dentro de su `recintoId`; el provincial tiene lectura global y creación de recintos/coordinadores sin editar actas.
+- **Integridad de escritura:** Firestore exige enteros no negativos, cuadre exacto de votos, secuencia incremental de `version` y creación simultánea del documento en `auditoria` dentro del mismo `writeBatch`.
+- **Protección de cuentas:** un usuario autenticado en Auth sin documento en `usuarios/{uid}` no tiene ningún permiso. Nadie puede autoasignarse rol ni modificar el de terceros.
+- **Riesgos documentados ([ADR-018](docs/adr/ADR-018-firebase-spark-sin-functions.md)):** el índice `cedulas/{cédula}` permite obtener el correo asociado conociendo una cédula exacta (no se puede listar), y la validación módulo 10 de cédula reside en cliente mientras el servidor valida longitud numérica de 10 dígitos y unicidad.
+- **Cero secretos en Git:** la configuración web (`src/environments/environment.prod.ts`) es pública por diseño; credenciales administrativas, `.env*` y keystores permanecen fuera del repositorio.
 
-## Instalación y configuración
+---
 
-Requisitos: Node 22, JDK 21, Android SDK, Firebase CLI (`npm install -g firebase-tools`).
+## 🛠️ Tecnologías Usadas
 
+| Capa | Stack |
+|---|---|
+| **Frontend & Estado** | Angular 22 (standalone components, Signals), Ionic 9, TypeScript 6, Chart.js 4 |
+| **Plataforma Móvil** | Capacitor 8 (Android), `@capacitor/camera`, `@capacitor/geolocation`, `@capacitor/network`, `@capacitor/haptics`, `@capacitor/keyboard`, `@capacitor/status-bar` |
+| **Backend (Spark)** | Firebase 13 (Authentication + Cloud Firestore + Rules & Composite Indexes) |
+| **Estilos & Tipografía** | SCSS, IBM Carbon Design System ([DESIGN.md](DESIGN.md)), `@fontsource/ibm-plex-sans`, `@fontsource/ibm-plex-mono` |
+| **Calidad & Testing** | Vitest, `@firebase/rules-unit-testing`, Playwright, ESLint (`--max-warnings 0`), Prettier |
+
+---
+
+## 🚀 Instalación y Despliegue
+
+**Prerrequisitos:** Node 22, JDK 21, Android SDK y Firebase CLI (`npm install -g firebase-tools`).
+
+### 1. Clonar e instalar dependencias
 ```powershell
+git clone https://github.com/JimSul16/EleccionesEPN.git
+cd EleccionesEPN
 npm install
 ```
 
-1. **App:** `src/environments/environment.ts` y `environment.prod.ts` contienen la configuración web del proyecto Firebase. Para otro proyecto, copia [environment.example.ts](src/environments/environment.example.ts) y completa los valores de la consola de Firebase. En desarrollo `useEmulators: true` conecta la app a los emuladores locales.
-2. **Consola de Firebase (una vez, plan gratuito Spark, sin tarjeta):** crear Firestore, activar el proveedor Correo/contraseña y poner en español las plantillas de correo (verificación y restablecimiento).
-3. **Deploy** (solo reglas e índices):
+### 2. Configurar proyecto Firebase (Plan Gratuito Spark)
+1. En la consola de Firebase (sin activar Blaze), crear base de datos **Firestore**, activar el proveedor **Correo/contraseña** en Authentication y configurar las plantillas de correo en español.
+2. Ajustar `src/environments/environment.ts` (emuladores) y `src/environments/environment.prod.ts` (producción), tomando como plantilla [`src/environments/environment.example.ts`](src/environments/environment.example.ts).
+3. Desplegar únicamente reglas e índices de Firestore:
 ```powershell
 firebase deploy --project elecciones-epn --only firestore:rules,firestore:indexes
 ```
 
-## Ejecución local con emuladores
-
-En esta PC el emulador de Firestore necesita la variable de abajo (la carpeta temporal tiene un espacio). Ver [docs/setup/EMULADORES.md](docs/setup/EMULADORES.md).
-
+### 3. Ejecución local con Emuladores
+En Windows, si la ruta de usuario contiene espacios, define `JAVA_TOOL_OPTIONS` antes de arrancar los emuladores ([docs/setup/EMULADORES.md](docs/setup/EMULADORES.md)):
 ```powershell
 $env:JAVA_TOOL_OPTIONS="-Djdk.net.unixdomain.tmpdir=C:\Users\Public"
 firebase emulators:start --project elecciones-epn --only auth,firestore
 ```
 
-En otra terminal, datos iniciales (R1) y cuentas de demostración:
-
+En una segunda terminal, cargar los datos iniciales (`--demo` agrega cuentas de prueba; `--actas-demo` agrega 24 actas ficticias para dashboard y alerta GPS):
 ```powershell
-$env:GCLOUD_PROJECT="elecciones-epn"; $env:FIRESTORE_EMULATOR_HOST="127.0.0.1:8085"; $env:FIREBASE_AUTH_EMULATOR_HOST="127.0.0.1:9099"
+$env:GCLOUD_PROJECT="elecciones-epn"
+$env:FIRESTORE_EMULATOR_HOST="127.0.0.1:8085"
+$env:FIREBASE_AUTH_EMULATOR_HOST="127.0.0.1:9099"
 node seed/seed.mjs --demo --actas-demo
 ```
 
-Y la app: `npx ng serve`.
-
-El seed carga 6 recintos de Pichincha (cantón Quito) con 33 JRV, 5 organizaciones, 5 candidaturas a alcaldía y 5 a prefectura (todas ficticias). `--demo` crea las cuentas de prueba y `--actas-demo` crea 24 actas para el dashboard (una registrada lejos de su recinto para mostrar la alerta GPS). Es idempotente.
-
-## Credenciales de demostración
-
-Solo para el emulador o el proyecto de demostración. Contraseña inicial de todas: `Ecuador2026` (se pide cambiarla al entrar).
-
-| Rol | Cédula | Mesas |
-|---|---|---|
-| Coordinador provincial | 1712345675 | todas |
-| Coordinadora de recinto (Unidad Educativa Los Cedros) | 1700000019 | recinto r01 |
-| Veedor 1 | 1700000027 | r01 mesas 1 y 2 |
-| Veedor 2 | 1700000035 | r01 mesa 3 |
-
-Son cédulas generadas con el algoritmo de verificación; no pertenecen a personas reales.
-
-## Pruebas
-
-| Qué | Comando | Resultado al 24-nov |
-|---|---|---|
-| Unitarias (reglas de negocio y guards) | `npm run test:unit` | 41 pruebas |
-| Reglas de seguridad (aislamiento del veedor, validaciones, fotos, alta de cuentas, auditoría) | `npm run test:rules` | 45 pruebas |
-| Integración de cuentas y acceso (Auth + Firestore) | ver abajo | 13 casos |
-| E2E de humo en navegador móvil (Playwright, Pixel 7) | `npm run test:e2e` | 4 pruebas |
-| Lint | `npx ng lint --max-warnings 0` | sin errores |
-
+Levantar la aplicación en navegador:
 ```powershell
-firebase emulators:exec --project demo-elecciones-epn --only auth,firestore "node seed/seed.mjs --demo && node tests/integracion/cuentas.mjs"
+npx ng serve
 ```
 
-Prueba en dispositivo: [docs/setup/PRUEBA-TELEFONO.md](docs/setup/PRUEBA-TELEFONO.md).
-
-## Generar el APK
-
+### 4. Generar APK Android (Debug)
 ```powershell
 npm run build
 npx cap sync android
 cd android
 .\gradlew.bat assembleDebug
 ```
+Salida generada: `android\app\build\outputs\apk\debug\app-debug.apk`. El APK de entrega final corresponde a una compilación `release` firmada publicada en GitHub Releases (el keystore no se versiona).
 
-Salida: `android\app\build\outputs\apk\debug\app-debug.apk`. El APK de entrega es una versión release firmada publicada como Release de GitHub (el keystore no está en el repositorio).
+---
 
-## Sin conexión
+## 🔑 Credenciales de Demostración
 
-El veedor puede registrar actas en modo avión: el acta, su foto y su registro de auditoría van en un solo lote que Firestore guarda en el teléfono y envía al volver la red. Si otra persona corrigió la misma acta mientras tanto, gana la versión del servidor ([ADR-010](docs/adr/ADR-010-offline-cache-y-cola-de-fotos.md)).
+Aplican al entorno de emuladores y al proyecto de demostración sembrado con `seed/seed.mjs --demo`. Todas usan contraseña inicial **`Ecuador2026`** (la app exige cambiarla al primer acceso; las cédulas son ficticias válidas módulo 10).
 
-## Uso de inteligencia artificial
+| Rol | Cédula | Alcance / Mesas |
+|---|---|---|
+| **Coordinador Provincial** | `1712345675` | Todos los recintos |
+| **Coordinadora de Recinto** | `1700000019` | `r01` — Unidad Educativa Los Cedros |
+| **Veedor 1** | `1700000027` | `r01` — Mesas 1 y 2 |
+| **Veedor 2** | `1700000035` | `r01` — Mesa 3 |
 
-Se usaron Claude Code, OpenCode y Antigravity con roles separados. Detalle de herramientas, instrucciones, qué se aceptó y qué se descartó, y cómo se verificó en [docs/IA.md](docs/IA.md).
+---
+
+## 🧪 Suite de Pruebas
+
+| Suite | Comando | Cobertura |
+|---|---|---|
+| **Unitarias** | `npm run test:unit` | 41 pruebas (reglas de dominio y guards) |
+| **Reglas Firestore** | `npm run test:rules` | 45 pruebas (aislamiento, actas, fotos, alta jerárquica y auditoría) |
+| **Integración Auth + Firestore** | ver abajo | 13 flujos completos contra emuladores |
+| **E2E Móvil (Playwright)** | `npm run test:e2e` | 4 pruebas de humo en perfil Pixel 7 |
+| **Linting** | `npx ng lint --max-warnings 0` | Verificación estática sin advertencias |
+
+```powershell
+$env:JAVA_TOOL_OPTIONS="-Djdk.net.unixdomain.tmpdir=C:\Users\Public"
+firebase emulators:exec --project demo-elecciones-epn --only auth,firestore "node seed/seed.mjs --demo && node tests/integracion/cuentas.mjs"
+```
+
+---
+
+## 📝 Documentación Completa
+
+- [docs/adr/](docs/adr/) — Registros de decisiones de arquitectura (`ADR-001` a `ADR-018`)
+- [docs/IA.md](docs/IA.md) — Registro transparente de uso de herramientas de IA (Claude Code, OpenCode y Antigravity)
+- [docs/DEFENSA.md](docs/DEFENSA.md) — Guía técnica de defensa del proyecto
+- [docs/setup/PRUEBA-TELEFONO.md](docs/setup/PRUEBA-TELEFONO.md) — Protocolo y resultados de validación en dispositivo físico
+- [docs/setup/EMULADORES.md](docs/setup/EMULADORES.md) — Configuración de emuladores Firebase en Windows
+- [DESIGN.md](DESIGN.md) — Especificación de diseño visual IBM Carbon
+
+<div align="center">
+  <i>Desarrollado para la Escuela Politécnica Nacional (EPN - ESFOT)</i>
+</div>
