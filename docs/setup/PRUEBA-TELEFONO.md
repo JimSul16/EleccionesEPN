@@ -39,7 +39,7 @@ Este documento detalla el procedimiento de validación en dispositivo Android f�
 | **12. Guardado de acta con totales válidos y GPS** | Ajustar `Total de sufragantes` para que muestre `Los totales cuadran`, asegurar foto aceptada y pulsar `Obtener ubicación`. Pulsar `Guardar acta` y verificar mensaje `Acta guardada y sincronizada.` | *Pendiente* | |
 | **13. Corregir acta (versión 2)** | Abrir un acta ya registrada (`Ver o corregir` desde coordinador o desde la mesa del veedor), verificar que el encabezado indica `Corregir acta de ...` y `versión 2`, modificar un valor manteniendo el cuadre y pulsar `Guardar corrección`. Verificar que el badge muestra `v2` y estado `CORREGIDA`. | *Pendiente* | |
 | **14. Modo Offline (Modo Avión)** | Activar modo avión en el teléfono. Registrar otra acta (por ejemplo, `Prefectura` de `Mesa 1` o `Alcaldía` de `Mesa 2`) con foto aceptada y totales válidos. Al guardar, verificar que muestra `"Guardada en el teléfono. Se enviará automáticamente al recuperar la conexión."` | *Pendiente* | |
-| **15. Sincronización automática al reconectar** | Desactivar modo avión. Verificar que en el indicador superior aparece `"Sincronizando N foto(s)…"` y que al completar desaparece el pendiente y la foto/acta quedan sincronizadas en Storage y Firestore. | *Pendiente* | |
+| **15. Sincronización automática al reconectar** | Desactivar modo avión. Verificar que en el indicador superior aparece `"Sincronizando actas y fotos guardadas sin conexión…"`, que desaparece al completar, y que el acta pasa a "Registrada" con su foto visible (acta y foto se guardan juntas en Firestore; plan gratuito, ADR-018). | *Pendiente* | |
 
 ---
 
