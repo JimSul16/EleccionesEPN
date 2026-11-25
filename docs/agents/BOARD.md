@@ -14,7 +14,7 @@ Verificación sobre `main`: lint, 41 unitarias, 4 E2E, 45 de reglas, 13 de integ
 | C-13 | Revisar y unir OpenCode (T-010..T-012) | done |
 | C-12 | Calibrar `UMBRAL_NITIDEZ` con la prueba en el teléfono | done (80: 3/3 nítidas aceptadas, 3/3 borrosas rechazadas; ADR-008) |
 | C-15 | Corregir las FALLAS de la prueba en el teléfono: dashboard (suma en el cliente, ADR-017) y aviso verde ilegible | done (re-probado OK en el teléfono) |
-| C-16 | Enlace del APK (GitHub Release) en el README | todo: miércoles |
+| C-16 | Enlace del APK (GitHub Release v1.0.0) en el README | done (apunta a `releases/tag/v1.0.0`; funciona cuando A-12 publique el Release) |
 
 ## OpenCode
 

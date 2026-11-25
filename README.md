@@ -17,7 +17,7 @@
   </p>
 
   <p>
-    <a href="PENDIENTE_ENLACE_RELEASE">📦 APK Release v1.0.0 (25-nov)</a> ·
+    <a href="https://github.com/JimSul16/EleccionesEPN/releases/tag/v1.0.0">📦 APK Release v1.0.0 (25-nov)</a> ·
     <a href="docs/adr/">📐 Decisiones (ADR)</a> ·
     <a href="docs/IA.md">🤖 Uso de IA</a> ·
     <a href="docs/DEFENSA.md">🎓 Guía de Defensa</a> ·
