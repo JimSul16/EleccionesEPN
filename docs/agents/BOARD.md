@@ -35,14 +35,17 @@ Actualizado: lunes 23-nov, tras unir las ramas de Claude, OpenCode y Antigravity
 
 | ID | Tarea | Estado |
 |---|---|---|
-| A-01 | `@firebase/rules-unit-testing` y script `test:rules` | done. El fallo 23/24 de Storage era por correr sin `--project demo-elecciones-epn`; corregido en `main`, ahora 30/30 |
+| A-01 | `@firebase/rules-unit-testing` y script `test:rules` | done (30/30 tests aprobados en emuladores) |
 | A-02 | `functions/.env.elecciones-epn` con `WEB_API_KEY` (no versionado) | done |
-| A-03 | Rol "Service Account Token Creator" a la cuenta de servicio de Functions | blocked: lo hace el usuario en la consola de Google Cloud (IAM) |
-| A-04 | `firebase deploy --only firestore:rules,firestore:indexes,storage,functions` | todo: ya no está bloqueado por las reglas; falta Blaze y A-03 |
+| A-03 | Rol "Service Account Token Creator" a la cuenta de servicio de Functions | blocked: pendiente asignación por el usuario en Google Cloud IAM |
+| A-04 | `firebase deploy --only firestore:rules,firestore:indexes,storage,functions` | blocked: listo para deploy apenas el usuario confirme plan Blaze, Auth y rol IAM A-03 |
 | A-05 | Bucket unificado a `elecciones-epn.firebasestorage.app` | done |
 | A-06 | `docs/setup/EMULADORES.md` | done |
-| A-07 | Quitar la dependencia errónea `"elecciones-epn": "file:.."` de `functions/package.json` | done en `main` (Claude). Antigravity: correr `npm --prefix functions install` para regenerar el lock |
-| S-06 | APK debug | done, pero se compiló antes de unir las ramas: **hay que regenerarlo desde `main`** |
+| A-07 | Limpieza e instalación de dependencias de Functions | done (sin dependencias erróneas; `npm run test:rules` pasa 30/30 y `npm --prefix functions run build` compila con código 0) |
+| S-07 | APK debug compilado y sincronizado con Android | done (APK 10.05 MB en `android/app/build/outputs/apk/debug/app-debug.apk`, listo para `adb install -r`) |
+| A-08 | Guía y matriz de pruebas en teléfono físico | in-progress (`docs/setup/PRUEBA-TELEFONO.md` creado; esperando conexión USB del dispositivo para ejecutar) |
+| A-09 | Datos iniciales en producción (`seed/seed.mjs`) | todo: pendiente credenciales de service account fuera del repo y confirmaciones del usuario |
+| A-10 | Subida a remoto de GitHub | todo: pendiente validación final de secretos y confirmación de merge |
 | T-007 | Ícono, splash, recursos Android, 4 SVG de estados, MANIFEST.md | done |
 | T-008 | dotLottie de sincronización y guardado, `motion.scss` con reduced-motion | done |
 
