@@ -23,7 +23,11 @@ const MENSAJES: Record<string, string> = {
 export function mensajeDeError(error: unknown): string {
   if (error instanceof ErrorParaUsuario) return error.message;
   const codigo = (error as { code?: string })?.code ?? '';
-  return MENSAJES[codigo] ?? 'Ocurrió un error inesperado.';
+  const mensaje = MENSAJES[codigo];
+  if (mensaje) return mensaje;
+  // Queda en la consola (chrome://inspect en el teléfono) para poder diagnosticarlo.
+  console.error('Error no traducido', codigo, error);
+  return 'Ocurrió un error inesperado.';
 }
 
 /** true cuando el error es por falta de red: la UI ofrece reintentar en vez de mostrar un fallo. */

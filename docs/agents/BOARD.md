@@ -13,7 +13,7 @@ Verificación sobre `main`: lint, 41 unitarias, 4 E2E, 45 de reglas, 13 de integ
 | C-14 | Migración al plan gratuito: roles en `usuarios`, alta de cuentas desde la app, fotos en Firestore, auditoría en el lote del acta; ADR-018 | done |
 | C-13 | Revisar y unir OpenCode (T-010..T-012) | done |
 | C-12 | Calibrar `UMBRAL_NITIDEZ` con los 6 puntajes del teléfono | todo: espera los 6 puntajes en `PRUEBA-TELEFONO.md` (A-08) |
-| C-15 | Corregir las FALLAS de la prueba en el teléfono | todo: 2 hallazgos registrados en `PRUEBA-TELEFONO.md` (error inesperado en Dashboard `getAggregateFromServer` y contraste de `.guardado-exitoso`) |
+| C-15 | Corregir las FALLAS de la prueba en el teléfono: dashboard con "error inesperado" (ahora suma en el cliente, ADR-017) y aviso verde ilegible al guardar acta | done (unido en `main` `4ea67a4`) |
 | C-16 | Enlace del APK (GitHub Release) en el README | todo: miércoles |
 
 ## OpenCode
